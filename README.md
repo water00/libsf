@@ -1,7 +1,7 @@
 # What is libsf
 libsf is simple C++ framework with few utilities
 
-It consists of follow simple utitlities
+It consists of following simple utitlities
   1. Debug 
   2. Timer
   3. State Machine
