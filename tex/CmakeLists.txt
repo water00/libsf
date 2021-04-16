@@ -1,0 +1,5 @@
+add_subdirectory(debugCheck)
+add_subdirectory(multiTask)
+add_subdirectory(messagePong)
+add_subdirectory(stateCheck)
+add_subdirectory(timerCheck)

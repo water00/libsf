@@ -1,0 +1,2 @@
+#define libsf_VERSION_MAJOR @libsf_VERSION_MAJOR@
+#define libsf_VERSION_MINOR @libsf_VERSION_MINOR@

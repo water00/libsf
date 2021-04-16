@@ -25,7 +25,7 @@ struct TimerInfo
     uint64_t milliSec;  // milliSec timeout for this timer
     uint64_t expiryMs;  // Timer to expire at this time (from epoch)
     uint32_t timerID;
-    SFTask* task;       // Socket to call when timer expires
+    SFTask* task;       // task to call when timer expires
     bool enabled;
     bool continuous;    // If continuous, restart timer again after expiry
 
@@ -46,7 +46,15 @@ struct TimerInfo
     {
         int64_t r = expiryMs - get_now();
         if (r < 0)
+        {
+            // In Windows, select doesn't work timeval is set to {0, 0}
+            // So return 1 
+            #if defined(_WIN32)
+            return 1;
+            #else
             return 0;
+            #endif
+        }
         return r;
     }
 
@@ -207,7 +215,7 @@ public:
             {
                 msLeft = vItr->ms_left();
                 tv.tv_sec = 0;
-                tv.tv_usec = msLeft * 1000;
+                tv.tv_usec = (long)msLeft * 1000;
             }
             tMutex.unlock();
 
@@ -220,9 +228,14 @@ public:
                 continue;
             }
 
+            // In windows, with all fds set to NULL, when timer expires
+            // -1 is returned instead of 0. Am I doing something wrong?
             switch(select(0, NULL, NULL, NULL, &tv))
             {
             case 0:
+            #if defined(_WIN32)
+            case -1:
+            #endif
                 {
                     tMutex.lock();
                     auto vItr = timerInfos.begin();
@@ -264,9 +277,11 @@ public:
                     
                 }
                 break;
+            #if !defined(_WIN32)
             case -1:
-                SFDebug::SF_print(std::string("Read failed, Reason: ") + strerror(errno));
+                SFDebug::SF_print(std::string("Timer Select failed, Reason: ") + strerror(errno));
                 break;
+            #endif
             default:
                 break;
             }

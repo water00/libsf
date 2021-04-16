@@ -43,6 +43,7 @@ void TimerTask::processFn()
 		// If all timers expired, exit out
 		if (gMsg.timerID == lastTimerID)
 		{
+			wngdbg << "Last Timer Expired. Stopping ...." << "\n";
 			stopTasks = true;
 		}
 	}
@@ -51,10 +52,10 @@ void TimerTask::processFn()
 
 void TimerTask::start_timers()
 {
-    srand(time(NULL));
+	srand(static_cast<uint32_t>(time(NULL)));
 
-    for (int i = 0; i < 100; i++)
-    {
+	for (int i = 0; i < 100; i++)
+	{
 		// Create 0th timer with max time. When this timer expires all other 
 		// timers would have completed and this task can exit
 		if (i == 0)
@@ -64,10 +65,10 @@ void TimerTask::start_timers()
 		else
 		{
 			// For testing purpose all of the timers are not continuous
-        	timers.create_timer(rand() % 10000, this, false);
+			timers.create_timer(rand() % 10000, this, false);
 		}
-    }
+	}
 
-    timers.print_timers();
+	timers.print_timers();
 
 }

@@ -1,5 +1,10 @@
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#if defined(_WIN32)
    //define something for Windows (32-bit and 64-bit, this part is common)
+   #include <WinSock2.h>
+   #include <afunix.h>
+   #define sleep(x) Sleep(x * 1000)
+   #define strerror(x) "-1"
+   #define USE_SELECT
    #ifdef _WIN64
       //define something for Windows (64-bit only)
    #else
@@ -31,12 +36,7 @@
     #include <sys/time.h>
     #include <unistd.h>
     #include <sys/epoll.h>
-#elif __unix__ // all unices not caught above
-    // Unix
-#elif defined(_POSIX_VERSION)
-    // POSIX
-#else
-#   error "Unknown compiler"
+    #include <unistd.h>
+    #define USE_EPOLL
 #endif
 
-#include <unistd.h>

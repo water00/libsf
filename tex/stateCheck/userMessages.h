@@ -8,7 +8,7 @@
 // (Each task needs only 1 command & 1 Message struct, other than timer)
 enum class UserCommands : int32_t
 {
-    STATE_DECISION = static_cast<int32_t>(SFCommands::INNO_MAX_INTERNAL) + 1,
+    STATE_DECISION = static_cast<int32_t>(SFCommands::SF_MAX_INTERNAL) + 1,
 };
 
 

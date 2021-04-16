@@ -16,9 +16,9 @@ SFDebug wngdbg(DBG_Warning, max_debug, Color_Blue, "stderr"); // Prints to stder
 SFDebug ifodbg(DBG_Info, max_debug, Color_Cyan);              // Prints to stdout
 SFDebug vbsdbg(DBG_Verbose, max_debug, Color_White);
 
-char decide(StateTask& stateTask)
+void decide(StateTask& stateTask)
 {
-	char c = std::getchar();
+    char c = (rand() % 2 == 0) ? 's': 'r';
 
     // Send message to the state task
     StateMessage sMsg;
@@ -28,6 +28,8 @@ char decide(StateTask& stateTask)
 
 int main()
 {
+    srand(time(NULL));
+
     StateTask stateTask;
 
     while(!stopTasks)

@@ -3,6 +3,9 @@
 #include "sfThread.h"
 #include "sfMessages.h"
 #include <memory>
+#if defined(_WIN32)
+#include "winSockPair.h"
+#endif
 
 typedef void(SFTask::*PROCFN)(void);
 
@@ -50,9 +53,14 @@ public:
     {
         processMutex.lock();
         if (socks[0] > 0 && socks[1] > 0)
-        { 
+        {
+            #ifdef _WIN32
+            shutdown(socks[0], SD_BOTH);
+            shutdown(socks[1], SD_BOTH);
+            #else
             shutdown(socks[0], SHUT_RDWR);
             shutdown(socks[1], SHUT_RDWR);
+            #endif
             socks[0] = socks[1] = -1;
         }
         processMutex.unlock();
@@ -69,13 +77,14 @@ public:
             // Indicate(send) that message is ready
             ret = send_msg(socks[1]) > 0 ? true : false;
         }
+        return ret;
     } 
 
     template <typename T>
     bool getMessage(T& msg)
     {
         bool ret = false;
-        processMutex.lock();        
+        processMutex.lock();
         if (!messages.empty())
         {
             msg = *(dynamic_cast<T*>(messages.front().get()));
@@ -102,11 +111,18 @@ public:
 
     void create_sock()
     {
-        if ((socketpair(PF_LOCAL, SOCK_STREAM, 0, socks)) < 0)
+        #if defined(_WIN32)
+            if (!WinSockPair::get_sockPair(socks))
+            {
+                SFDebug::SF_print(std::string("SocketPair Creation failed"));
+            }
+        #else
+        if ((socketpair(AF_UNIX, SOCK_STREAM, 0, socks)) < 0)
         {
             SFDebug::SF_print(std::string("Socket Creation failed, Reason: ") + strerror(errno));
         }
         // We can put socket options here, though at present we don't need any.
+        #endif
     }
 
     int32_t send_msg(int32_t sock)
@@ -114,7 +130,7 @@ public:
         char dummy[] = "\n\r";
         int32_t ret = 0;
 
-        if ((ret = write(sock, dummy, strlen(dummy))) < 0)
+        if ((ret = send(sock, dummy, (int32_t)strlen(dummy), 0)) < 0)
         {
             SFDebug::SF_print(std::string("Write failed, Reason: ") + strerror(errno));
             ret = -1;

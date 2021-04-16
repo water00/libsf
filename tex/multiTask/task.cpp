@@ -49,18 +49,20 @@ void Task::processFn()
 	
 	if (cnt >= numMessages)
 	{
-		SFTask::sfThread->rm_process(socks[0]);
-		shut_down();
-		wngdbg << "Task: " << taskNum << " Has reached the count........." << "\n";
-	}
-	TestMessage sMsg;
-	sMsg.msg = data.str();
-
-	// Add the message to new random data queue. If it fails it means at least
-	// one task has completed. Otherwise it wont fail in our simple example. 
-	// Then stop
-	if (!rand_process()->addMessage(sMsg)) 
-	{
+		wngdbg << "Task: " << taskNum << " Has reached the count. Stopping........" << "\n";
 		stopTasks = true;
+	}
+	else
+	{
+		TestMessage sMsg;
+		sMsg.msg = data.str();
+
+		// Add the message to new random data queue. If it fails it means at least
+		// one task has completed. Otherwise it wont fail in our simple example. 
+		// Then stop
+		if (!rand_process()->addMessage(sMsg)) 
+		{
+			stopTasks = true;
+		}
 	}
 }

@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 	}
 
 
-	srand(time(NULL));
+	srand((int32_t)time(NULL));
 
 	for (int i = 0; i < numProcess; i++)
 	{

@@ -7,7 +7,6 @@
 #include <cstring>
 #include <sstream>
 #include <cerrno>
-#include <unistd.h>
 
 enum DebugLevel
 {
@@ -40,14 +39,14 @@ enum Colors
     Color_White = 97
 };
 
-#define DBG_PRINT { if (dbgLevel <= maxDbg && ofs) { ofs << fgColor << n; } return *this; }
-#define DBG_PRINT_FLUSH { if (dbgLevel <= maxDbg && ofs) { ofs << fgColor << n; } if (n == "\n") ofs.flush(); return *this; }
+#define DBG_PRINT { if (dbgLevel <= maxDbg && *ofs) { *ofs << fgColor << n; } return *this; }
+#define DBG_PRINT_FLUSH { if (dbgLevel <= maxDbg && *ofs) { *ofs << fgColor << n; } if (n == "\n") (*ofs).flush(); return *this; }
 
 class SFDebug
 {
 private:
     DebugLevel dbgLevel;
-    std::ofstream ofs;
+    std::ostream* ofs;
     std::string fgColor;
     DebugLevel maxDbg;
 	
@@ -58,20 +57,26 @@ public:
         maxDbg = max_dbg();
         if (fName == "stdout")
         {
-            fName = "/dev/stdout";
+            ofs = &std::cout;
         }
         else if (fName == "stderr")
         {
-            fName = "/dev/stderr";
+            ofs = &std::cerr;
         }
-        ofs.open(fName, std::ios::app);
+        else
+        {
+            ofs = new std::ofstream(fName);
+        }
         if (!ofs)
         {
             std::cout << "Opening of Debug File failed" << std::endl;
         }
-        std::stringstream ss;
-        ss << "\033[" << clr << "m"; 
-        fgColor = ss.str();
+        else
+        {
+            std::stringstream ss;
+            ss << "\033[" << clr << "m"; 
+            fgColor = ss.str();
+        }
     }
 
     // For internal debug printing
@@ -85,8 +90,8 @@ public:
     SFDebug& operator<<(const std::string& n) DBG_PRINT
     SFDebug& operator<<(const char* n)        DBG_PRINT_FLUSH
     SFDebug& operator<<(char* n)              DBG_PRINT
-    SFDebug& operator<<(int8_t n)		        DBG_PRINT
-    SFDebug& operator<<(uint8_t n)	        DBG_PRINT
+    SFDebug& operator<<(int8_t n)             DBG_PRINT
+    SFDebug& operator<<(uint8_t n)            DBG_PRINT
     SFDebug& operator<<(int16_t n)            DBG_PRINT
     SFDebug& operator<<(uint16_t n)           DBG_PRINT
     SFDebug& operator<<(int32_t n)            DBG_PRINT

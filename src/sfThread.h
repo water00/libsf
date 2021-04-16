@@ -1,6 +1,5 @@
 #pragma once
-
-//#define USE_SELECT
+#include "osRelated.h"
 
 #ifdef USE_SELECT
 #include "sfThread_select.h"

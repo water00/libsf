@@ -141,9 +141,9 @@ public:
     void* thread_run()
     {
         int fdCount = 0;
-        struct timespec ts;
-        ts.tv_sec = 5;
-        ts.tv_nsec = 0;
+        struct timeval tv;
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
 
         stopThread = false;
         while (!stopThread)
@@ -155,13 +155,13 @@ public:
                 sleep(1);
                 continue;
             }
-            fdCount = pselect(nfds+1, &readfds, NULL, NULL, &ts, NULL);
+            fdCount = select(nfds+1, &readfds, NULL, NULL, &tv);
             switch (fdCount)
             {
             case 0:
                 break;
             case -1:
-                SFDebug::SF_print(std::string("pselect error, Reason: ") + strerror(errno));
+                SFDebug::SF_print(std::string("select error, Reason: ") + strerror(errno));
                 break;
             default:
                 // Check whether any sock has data and call the process fn accordingly
@@ -181,7 +181,7 @@ public:
         char dummy[3];
         int32_t ret = 0;
 
-        if (read(sock, dummy, sizeof(dummy)) < 0)
+        if (recv(sock, dummy, sizeof(dummy), 0) < 0)
         {
             SFDebug::SF_print(std::string("Read failed, Reason: ") + strerror(errno));
             return -1;

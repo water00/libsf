@@ -66,12 +66,13 @@ void StateTask::process_stateMsg()
 		wngdbg << "User decision received : " << sMsg.decision << "\n";
 		switch (sMsg.decision)
 		{
-		case 'r':
-			stateEvent(EVENT_Restart);
-			break;
 		case 's':
 			stateEvent(EVENT_Stop);
 			break; 
+		case 'r':
+		default:
+			stateEvent(EVENT_Restart);
+			break;
 		}
 	}
 }
@@ -80,7 +81,7 @@ void StateTask::processFn()
 {
 	switch (getCommand())
 	{
-	case static_cast<int32_t>(SFCommands::INNO_TIMER_EXPIRED):
+	case static_cast<int32_t>(SFCommands::SF_TIMER_EXPIRED):
 		process_timer();
 		break;
 	case static_cast<int32_t>(UserCommands::STATE_DECISION):
@@ -91,7 +92,6 @@ void StateTask::processFn()
 
 void StateTask::start_timers()
 {
-    srand(time(NULL));
 
 	// Start 2 timers A and B. Depending on which timer comes first 
 	// State will change. Once the other timer also expires, the state

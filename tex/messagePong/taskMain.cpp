@@ -8,7 +8,9 @@ using namespace std;
 Task1	th1;
 Task2 th2;
 
+// Declare static fn of sfTask here. 
 SFThread<PROCFN>* SFTask::sfThread;
+int32_t SFTask::taskCount = 0;
 
 int main()
 {
