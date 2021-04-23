@@ -28,7 +28,7 @@ void decide(StateTask& stateTask)
 
 int main()
 {
-    srand(time(NULL));
+    srand((int32_t)time(NULL));
 
     StateTask stateTask;
 

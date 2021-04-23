@@ -17,7 +17,7 @@ private:
 
 protected:
 
-    int32_t socks[2];
+    sock_size socks[2];
     static int32_t taskCount;
 
 public:
@@ -99,7 +99,7 @@ public:
     int32_t getCommand()
     {
         int32_t cmd = -1;
-        processMutex.lock();        
+        processMutex.lock();
         if (!messages.empty())
         {
             cmd = messages.front().get()->command;
@@ -125,7 +125,7 @@ public:
         #endif
     }
 
-    int32_t send_msg(int32_t sock)
+    int32_t send_msg(sock_size sock)
     {
         char dummy[] = "\n\r";
         int32_t ret = 0;

@@ -16,7 +16,7 @@ class SFTask;
 template <typename PROCESSFN>
 struct ProcessStruct
 {
-    int32_t sock;
+    sock_size sock;
     SFTask* processObj;
     PROCESSFN processFn;
 };
@@ -28,13 +28,13 @@ class SFThread
 {
 private:
     typedef ProcessStruct<PROCESSFN> PSTRUCT;
-    std::map<int32_t, PSTRUCT > processFnMap;
+    std::map<sock_size, PSTRUCT > processFnMap;
     std::thread iThread;
     std::recursive_mutex iMutex;
     bool stopThread;
     bool stopped;
 
-    int nfds;
+    sock_size nfds;
     fd_set readfds;
 
 public:
@@ -90,7 +90,7 @@ public:
         bool ret = true;
         int s = 0;
         lock();
-        typename std::map<int32_t, PSTRUCT>::iterator mItr = processFnMap.find(pID);
+        typename std::map<sock_size, PSTRUCT>::iterator mItr = processFnMap.find(pID);
  
         if (mItr == processFnMap.end())
         {
@@ -107,7 +107,7 @@ public:
     void process_fns()
     {
         lock();
-        for (typename std::map<int32_t, PSTRUCT >::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
+        for (typename std::map<sock_size, PSTRUCT >::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
             if (FD_ISSET(mItr->second.sock, &readfds))
             {
@@ -125,9 +125,9 @@ public:
         lock();
         nfds = 0;
         FD_ZERO(&readfds);
-        for (typename std::map<int32_t, PSTRUCT>::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
+        for (typename std::map<sock_size, PSTRUCT>::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
-            nfds = std::max<int32_t>(nfds,  mItr->second.sock);
+            nfds = std::max<sock_size>(nfds,  mItr->second.sock);
             FD_SET(mItr->second.sock, &readfds);
         }
         unlock();
@@ -155,7 +155,7 @@ public:
                 sleep(1);
                 continue;
             }
-            fdCount = select(nfds+1, &readfds, NULL, NULL, &tv);
+            fdCount = select((int32_t)nfds+1, &readfds, NULL, NULL, &tv);
             switch (fdCount)
             {
             case 0:
@@ -175,7 +175,7 @@ public:
         return NULL;
     }
 
-    int32_t read_msg(int32_t sock)
+    int32_t read_msg(sock_size sock)
     {
         // Read the data and throw away as it is just dummy msg
         char dummy[3];

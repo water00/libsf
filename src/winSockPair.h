@@ -13,7 +13,7 @@ class WinSockPair
 {
 private:
     inline static bool initDone {false};
-    inline static int64_t srvSock {-1};
+    inline static sock_size srvSock {-1};
     inline static const int32_t winBacklog {8};
     inline static const char* winSrvPath  {"/temp/socket.sock"};
 
@@ -56,9 +56,9 @@ private:
         }
     }
 
-    static int64_t get_acceptSock()
+    static sock_size get_acceptSock()
     {
-        int64_t acceptSock;
+        sock_size acceptSock;
 
         if ((acceptSock = accept(srvSock, NULL, NULL)) < 0)
         {
@@ -68,9 +68,9 @@ private:
         return acceptSock;
     }
 
-    static int64_t get_clientSock()
+    static sock_size get_clientSock()
     {
-        int64_t cliSock;
+        sock_size cliSock;
         struct sockaddr_un cliaddr;
 
         if ((cliSock = socket(AF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET)
@@ -90,7 +90,7 @@ private:
     }
 
 public:
-    static bool get_sockPair(int32_t socks[2])
+    static bool get_sockPair(sock_size socks[2])
     {
         bool ret = true;
         if (!initDone)
@@ -108,11 +108,11 @@ public:
 
         // Casting 64 bit to 32 bit; Normally shouldn't be a problem
         // Caution warrented.
-        if ((socks[0] = (int32_t)srvFut.get()) == INVALID_SOCKET)
+        if ((socks[0] = (sock_size)srvFut.get()) == INVALID_SOCKET)
         {
             ret = false;
         }
-        if ((socks[1] = (int32_t)cliFut.get()) == INVALID_SOCKET)
+        if ((socks[1] = (sock_size)cliFut.get()) == INVALID_SOCKET)
         {
             ret = false;
         }
