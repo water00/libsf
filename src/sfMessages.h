@@ -3,27 +3,21 @@
 #include <cstdint>
 #include <string>
 
-enum class SFCommands: int32_t
+enum class SFType: int32_t
 {
-    SF_TEST = 1,
-    SF_TIMER_EXPIRED = 2,
-    SF_MAX_INTERNAL = 9
+    SFTYPE_TIMER = 1,
+    SFTYPE_USER = 2,
 };
-
-/*
-enum class UserCommands : int32_t
-{
-    USER_TEST = static_cast<int32_t>(SFCommands::SF_MAX_INTERNAL) + 1,
-};
-*/
 
 struct SFMessage
 {
-    int32_t command;
+    SFType type;
 
-    SFMessage(int32_t c) : command(c) {}
+    SFMessage(SFType t = SFType::SFTYPE_USER) : type(t) {}
     // Virtual is necessary
     virtual ~SFMessage() {}
+    // Get type
+    virtual SFType getType() { return type;}
 };
 
 struct TestMessage : SFMessage
@@ -31,15 +25,15 @@ struct TestMessage : SFMessage
     // Test message
     std::string msg;
 
-    TestMessage() : SFMessage(static_cast<int32_t>(SFCommands::SF_TEST)) {}
+    TestMessage() : SFMessage() {}
     virtual ~TestMessage() {}
 };
 
 struct TimerMessage : SFMessage
 {
-    // ID of timer thet expired
+    // ID of timer that expired
     int32_t timerID;
 
-    TimerMessage() : SFMessage(static_cast<int32_t>(SFCommands::SF_TIMER_EXPIRED)) {}
+    TimerMessage() : SFMessage(SFType::SFTYPE_TIMER) {}
     virtual ~TimerMessage() {}
 };

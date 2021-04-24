@@ -21,6 +21,8 @@ void decide(StateTask& stateTask)
     char c = (rand() % 2 == 0) ? 's': 'r';
 
     // Send message to the state task
+    // This is sent ever second. Most times it is
+    // not relevant as event will be discarded by state machine.
     StateMessage sMsg;
     sMsg.decision = c;
     stateTask.addMessage(sMsg);

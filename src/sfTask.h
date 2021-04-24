@@ -55,11 +55,11 @@ public:
         if (socks[0] > 0 && socks[1] > 0)
         {
             #ifdef _WIN32
-            shutdown(socks[0], SD_BOTH);
-            shutdown(socks[1], SD_BOTH);
+                shutdown(socks[0], SD_BOTH);
+                shutdown(socks[1], SD_BOTH);
             #else
-            shutdown(socks[0], SHUT_RDWR);
-            shutdown(socks[1], SHUT_RDWR);
+                shutdown(socks[0], SHUT_RDWR);
+                shutdown(socks[1], SHUT_RDWR);
             #endif
             socks[0] = socks[1] = -1;
         }
@@ -96,17 +96,18 @@ public:
         return ret;
     }
 
-    int32_t getCommand()
+    bool getMessageType(SFType& type)
     {
-        int32_t cmd = -1;
+        bool ret = false;
         processMutex.lock();
         if (!messages.empty())
         {
-            cmd = messages.front().get()->command;
+            type = messages.front()->getType();
+            ret = true;
         }
         processMutex.unlock();
 
-        return cmd;
+        return ret;
     }
 
     void create_sock()
@@ -117,11 +118,11 @@ public:
                 SFDebug::SF_print(std::string("SocketPair Creation failed"));
             }
         #else
-        if ((socketpair(AF_UNIX, SOCK_STREAM, 0, socks)) < 0)
-        {
-            SFDebug::SF_print(std::string("Socket Creation failed, Reason: ") + strerror(errno));
-        }
-        // We can put socket options here, though at present we don't need any.
+            if ((socketpair(AF_UNIX, SOCK_STREAM, 0, socks)) < 0)
+            {
+                SFDebug::SF_print(std::string("Socket Creation failed, Reason: ") + strerror(errno));
+            }
+            // We can put socket options here, though at present we don't need any.
         #endif
     }
 

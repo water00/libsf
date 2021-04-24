@@ -73,9 +73,11 @@ public:
         }
         else
         {
-            std::stringstream ss;
-            ss << "\033[" << clr << "m"; 
-            fgColor = ss.str();
+            #ifndef _WIN32
+                std::stringstream ss;
+                ss << "\033[" << clr << "m"; 
+                fgColor = ss.str();
+            #endif
         }
     }
 

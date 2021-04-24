@@ -38,55 +38,65 @@ StateTask::~StateTask()
 	delete stateMc;
 }
 
-void StateTask::process_timer()
+void StateTask::process_timer(const TimerMessage& tMsg)
 {
-	TimerMessage gMsg;
-
-	if (getMessage(gMsg))
+	wngdbg << "Timer ID: " << tMsg.timerID << " Expired" << "\n";
+	if (tMsg.timerID == timerAId)
 	{
-		wngdbg << "Timer ID: " << gMsg.timerID << " Expired" << "\n";
-		if (gMsg.timerID == timerAId)
-		{
-			stateEvent(EVENT_TimerA);
-		}
-		else if (gMsg.timerID == timerBId)
-		{
-			stateEvent(EVENT_TimerB);
-		}
+		stateEvent(EVENT_TimerA);
 	}
-
+	else if (tMsg.timerID == timerBId)
+	{
+		stateEvent(EVENT_TimerB);
+	}
+	else
+	{
+		errdbg << "Timer ID: " << tMsg.timerID << " is invalid" << "\n";
+	}
 }
 
-void StateTask::process_stateMsg()
+void StateTask::process_stateMsg(const StateMessage& sMsg)
 {
-	StateMessage sMsg;
-
-	if (getMessage(sMsg))
+	wngdbg << "User decision received : " << sMsg.decision << "\n";
+	switch (sMsg.decision)
 	{
-		wngdbg << "User decision received : " << sMsg.decision << "\n";
-		switch (sMsg.decision)
-		{
-		case 's':
-			stateEvent(EVENT_Stop);
-			break; 
-		case 'r':
-		default:
-			stateEvent(EVENT_Restart);
-			break;
-		}
+	case 's':
+		stateEvent(EVENT_Stop);
+		break; 
+	case 'r':
+	default:
+		stateEvent(EVENT_Restart);
+		break;
 	}
 }
 
 void StateTask::processFn()
 {
-	switch (getCommand())
+	SFType msgType;
+
+	if (getMessageType(msgType))
 	{
-	case static_cast<int32_t>(SFCommands::SF_TIMER_EXPIRED):
-		process_timer();
-		break;
-	case static_cast<int32_t>(UserCommands::STATE_DECISION):
-		process_stateMsg();
-		break;
+		switch (msgType)
+		{
+		case SFType::SFTYPE_TIMER:
+			{
+				TimerMessage tMsg;
+				if (getMessage(tMsg))
+				{
+					process_timer(tMsg);
+				}
+			}
+			break;
+		case SFType::SFTYPE_USER:
+			{
+				StateMessage sMsg;
+				if (getMessage(sMsg))
+				{
+					process_stateMsg(sMsg);
+				}
+			}
+			break;
+		}
 	}
 }
 
@@ -177,7 +187,7 @@ void StateTask::setup_stateMc()
 
 void StateTask::stateEvent(EVENT e)
 {
-    ifodbg << "CurrState: " << stateMc->get_currState()  << ", Event: " << e << "\n"; 
+    wngdbg << "CurrState: " << stateMc->get_currState()  << ", Event: " << e << "\n"; 
 	stateMc->do_actions(this, e);
-	ifodbg << "New State: " << stateMc->get_currState() << "\n";
+	wngdbg << "New State: " << stateMc->get_currState() << "\n";
 }

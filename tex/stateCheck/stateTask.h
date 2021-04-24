@@ -38,8 +38,8 @@ private:
 
 	void setup_stateMc();
 
-	void process_timer();
-	void process_stateMsg();
+	void process_timer(const TimerMessage& tMsg);
+	void process_stateMsg(const StateMessage& sMsg);
 	
 public:
 	StateTask();
