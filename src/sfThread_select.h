@@ -109,10 +109,13 @@ public:
         lock();
         for (typename std::map<sock_size, PSTRUCT >::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
-            if (FD_ISSET(mItr->second.sock, &readfds))
+            PSTRUCT p = mItr->second;
+            if (FD_ISSET(p.sock, &readfds))
             {
-                PSTRUCT p = mItr->second;
-                read_msg(p.sock);
+                if (read_msg(p.sock) < 0)
+                {
+                    continue;
+                }
                 PROCESSFN pFn = p.processFn;
                 (p.processObj->*pFn)();
             }

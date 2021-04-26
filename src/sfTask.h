@@ -18,22 +18,16 @@ private:
 protected:
 
     sock_size socks[2];
-    static int32_t taskCount;
 
 public:
-	static SFThread<PROCFN> *sfThread;
+    SFThread<PROCFN> *sfThread;
 
     SFTask()
     {
         socks[0] = -1;
         socks[1] = -1;
         
-        if (sfThread == NULL)
-        {
-            sfThread = new SFThread<PROCFN> ();
-        }
-        taskCount++;
-
+        sfThread = new SFThread<PROCFN> ();
     }
     virtual ~SFTask()
     {
@@ -42,10 +36,8 @@ public:
             lItr->reset();
         }
         messages.clear();
-        if (--taskCount == 0)
-        {
-            delete sfThread;
-        }
+        shut_down();
+        delete sfThread;
     }
    	virtual void processFn()  = 0;
 

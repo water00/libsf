@@ -3,9 +3,6 @@
 #include "../src/sfTimer.h"
 #include "timerTask.h"
 
-// Declare static fn of sfTask here. 
-SFThread<PROCFN>* SFTask::sfThread;
-int32_t SFTask::taskCount = 0;
 
 bool stopTasks = false;
 
@@ -33,5 +30,4 @@ int main()
         sleep(1);
     }
 
-	SFTask::sfThread->stop_thread();
 }

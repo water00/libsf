@@ -3,10 +3,6 @@
 #include "../src/sfTimer.h"
 #include "stateTask.h"
 
-// Declare static fn of sfTask here. 
-SFThread<PROCFN>* SFTask::sfThread;
-int32_t SFTask::taskCount = 0;
-
 bool stopTasks = false;
 
 DebugLevel max_debug() { return DBG_Info; }
@@ -40,5 +36,4 @@ int main()
         sleep(1);
     }
 
-	SFTask::sfThread->stop_thread();
 }
