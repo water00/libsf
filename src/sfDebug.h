@@ -49,12 +49,14 @@ private:
     std::ostream* ofs;
     std::string fgColor;
     DebugLevel maxDbg;
+    bool fileOut;
 	
 public:
     SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), Colors clr = Color_Default, std::string fName = "stdout")
     {
         dbgLevel = dbgLvl;
         maxDbg = max_dbg();
+        fileOut = false;
         if (fName == "stdout")
         {
             ofs = &std::cout;
@@ -66,6 +68,7 @@ public:
         else
         {
             ofs = new std::ofstream(fName);
+            fileOut = true;
         }
         if (!ofs)
         {
@@ -78,6 +81,14 @@ public:
                 ss << "\033[" << clr << "m"; 
                 fgColor = ss.str();
             #endif
+        }
+    }
+
+    ~SFDebug()
+    {
+        if (fileOut && ofs)
+        {
+            delete ofs;
         }
     }
 

@@ -5,6 +5,10 @@
 #include <memory>
 #if defined(_WIN32)
 #include "winSockPair.h"
+// To check memory leak
+#ifdef VLD
+#include <vld.h>
+#endif
 #endif
 
 typedef void(SFTask::*PROCFN)(void);
