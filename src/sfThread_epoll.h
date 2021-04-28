@@ -135,9 +135,11 @@ public:
     {
         lock();
         PSTRUCT p = processFnMap[s];
-        read_msg(p.sock);
-        PROCESSFN pFn = p.processFn;
-        (p.processObj->*pFn)();
+        if (read_msg(p.sock) > 0)
+        {
+            PROCESSFN pFn = p.processFn;
+            (p.processObj->*pFn)();
+        }
         unlock();
     }
 
@@ -168,7 +170,7 @@ public:
                 {
                     process_fns(events[i].data.fd);
                 }
-                break;            
+                break;
             }
             delete [] events;
         }
@@ -184,10 +186,9 @@ public:
         char dummy[3];
         int32_t ret = 0;
 
-        if (read(sock, dummy, sizeof(dummy)) < 0)
+        if ((ret = read(sock, dummy, sizeof(dummy))) < 0)
         {
             SFDebug::SF_print(std::string("Read failed, Reason: ") + strerror(errno));
-            return -1;
         }
         return ret;
     }

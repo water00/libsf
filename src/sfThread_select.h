@@ -110,12 +110,8 @@ public:
         for (typename std::map<sock_size, PSTRUCT >::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
             PSTRUCT p = mItr->second;
-            if (FD_ISSET(p.sock, &readfds))
+            if (FD_ISSET(p.sock, &readfds) && (read_msg(p.sock) > 0))
             {
-                if (read_msg(p.sock) < 0)
-                {
-                    continue;
-                }
                 PROCESSFN pFn = p.processFn;
                 (p.processObj->*pFn)();
             }
@@ -184,10 +180,9 @@ public:
         char dummy[3];
         int32_t ret = 0;
 
-        if (recv(sock, dummy, sizeof(dummy), 0) < 0)
+        if ((ret = recv(sock, dummy, sizeof(dummy), 0)) < 0)
         {
             SFDebug::SF_print(std::string("Read failed, Reason: ") + strerror(errno));
-            return -1;
         }
         return ret;
     }

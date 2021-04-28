@@ -1,11 +1,13 @@
-find_library (
-    VLD_LIB
-    PATHS "C:/Program Files (x86)/Visual Leak Detector/lib/Win64"
-    NAMES vld.lib
-)
-message(STATUS "VLD_LIB: [${VLD_LIB}]")
-if (NOT VLD_LIB)
-    message("Did not find vld.lib")
+if (WIN32)
+    find_library (
+        VLD_LIB
+        PATHS "C:/Program Files (x86)/Visual Leak Detector/lib/Win64"
+        NAMES vld.lib
+    )
+    message(STATUS "VLD_LIB: [${VLD_LIB}]")
+    if (NOT VLD_LIB)
+        message("Did not find vld.lib")
+    endif()
 endif()
 
 
