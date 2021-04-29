@@ -100,6 +100,21 @@ public:
         return ret;
     }
 
+    template <typename T>
+    bool peekMessage(T& msg)
+    {
+        bool ret = false;
+        processMutex.lock();
+        if (!messages.empty())
+        {
+            msg = *(dynamic_cast<T*>(messages.front().get()));
+            ret = true;
+        }
+        processMutex.unlock();
+
+        return ret;
+    }
+
     bool getMessageType(SFType& type)
     {
         bool ret = false;
