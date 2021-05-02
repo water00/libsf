@@ -15,7 +15,6 @@ private:
     inline static bool initDone {false};
     inline static sock_size srvSock {-1};
     inline static const int32_t winBacklog {8};
-    inline static const char* winSrvPath  {"/temp/socket.sock"};
 
     WinSockPair(const WinSockPair&) = delete;
     WinSockPair& operator=(const WinSockPair&) = delete;
@@ -27,10 +26,12 @@ private:
         int wsaRes;
         struct sockaddr_un servaddr;
   
-        _unlink(winSrvPath);
+        std::string winSrvPath = get_sockPath();
+
+        _unlink(winSrvPath.c_str());
         memset((char*)&servaddr, 0, sizeof(servaddr));
         servaddr.sun_family = AF_UNIX;
-        strcpy_s(servaddr.sun_path, sizeof(servaddr.sun_path), winSrvPath);
+        strcpy_s(servaddr.sun_path, sizeof(servaddr.sun_path), winSrvPath.c_str());
 
 
         if ((wsaRes = WSAStartup(MAKEWORD(2,2), &wsaData)) != 0) 
@@ -56,6 +57,13 @@ private:
         }
     }
 
+    static std::string get_sockPath()
+    {
+        std::stringstream ss;
+        ss << "/temp/socket_" << GetCurrentProcessId() << ".sock";
+        return ss.str();
+    }
+
     static sock_size get_acceptSock()
     {
         sock_size acceptSock;
@@ -78,9 +86,12 @@ private:
             std::cout << "Client sock failed" << std::endl;
             return -1;
         }
+
+        std::string winSrvPath = get_sockPath();
+
         memset(&cliaddr, 0, sizeof(cliaddr));
         cliaddr.sun_family = AF_UNIX;
-        strcpy_s(cliaddr.sun_path, sizeof(cliaddr.sun_path), winSrvPath);
+        strcpy_s(cliaddr.sun_path, sizeof(cliaddr.sun_path), winSrvPath.c_str());
 
         if (connect(cliSock, (sockaddr*)&cliaddr, sizeof(cliaddr)) == SOCKET_ERROR)
         {
