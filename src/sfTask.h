@@ -22,17 +22,17 @@ private:
 protected:
 
     sock_size socks[2];
-    static int32_t taskCount;
+    inline static int32_t taskCount = 0;
 
 public:
-	static SFThread<PROCFN> *sfThread;
+	inline static SFThread<PROCFN> *sfThread = nullptr;
 
     SFTask()
     {
         socks[0] = -1;
         socks[1] = -1;
         
-        if (sfThread == NULL)
+        if (sfThread == nullptr)
         {
             sfThread = new SFThread<PROCFN> ();
         }
