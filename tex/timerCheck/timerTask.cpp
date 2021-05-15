@@ -13,6 +13,12 @@ extern SFDebug wngdbg;
 extern SFDebug ifodbg;
 extern SFDebug vbsdbg;
 
+struct UserData
+{
+	int32_t i;
+	std::string s;
+};
+
 TimerTask::TimerTask()
 {
 	// Create sock
@@ -39,7 +45,8 @@ void TimerTask::processFn()
 
 	while (getMessage(gMsg))
 	{
-		wngdbg << "Timer ID: " << gMsg.timerID << " Expired" << "\n";
+		UserData uData = std::any_cast<UserData>(gMsg.userData);
+		wngdbg << "Timer ID: " << gMsg.timerID << " Expired with userData : { " << uData.i << ", " << uData.s << " }" << "\n";
 		// If all timers expired, exit out
 		if (gMsg.timerID == lastTimerID)
 		{
@@ -56,16 +63,20 @@ void TimerTask::start_timers()
 
 	for (int i = 0; i < 100; i++)
 	{
+		std::stringstream ss;
+		ss << "String_" << i;
+		UserData uData {i, ss.str()};
+
 		// Create 0th timer with max time. When this timer expires all other 
 		// timers would have completed and this task can exit
 		if (i == 0)
 		{
-			lastTimerID = timers.create_timer(10000, this, false);
+			lastTimerID = timers.create_timer(10000, this, false, uData);
 		}
 		else
 		{
 			// For testing purpose all of the timers are not continuous
-			timers.create_timer(rand() % 10000, this, false);
+			timers.create_timer(rand() % 10000, this, false, uData);
 		}
 	}
 

@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
+#include <any>
 #include "osRelated.h"
 #include "sfDebug.h"
 #include "sfTask.h"
@@ -28,13 +29,13 @@ struct TimerInfo
     SFTask* task;       // task to call when timer expires
     bool enabled;
     bool continuous;    // If continuous, restart timer again after expiry
+    std::any userData;  // Save user data to be sent back when timer expires
 
-    TimerInfo(uint64_t ms, uint32_t tID, SFTask* t, bool e, bool c) :
-        milliSec(ms), timerID(tID), task(t), enabled(e), continuous(c)
+    TimerInfo(uint64_t ms, uint32_t tID, SFTask* t, bool e, bool c, std::any uData) :
+        milliSec(ms), timerID(tID), task(t), enabled(e), continuous(c), userData(uData)
     {
         expiryMs = get_now() + milliSec;
     }
-
     // Returns milliseconds from epoch in integral 
     uint64_t get_now()
     {
@@ -113,13 +114,13 @@ public:
         timerInfos.clear();
     }
 
-    uint32_t create_timer(uint64_t ms, SFTask* task, bool continuous)
+    uint32_t create_timer(uint64_t ms, SFTask* task, bool continuous, std::any uData = std::any())
     {
         if (task == nullptr)
         {
             return 0;
         }
-        TimerInfo t(ms, ++idCnt, task, true, continuous);
+        TimerInfo t(ms, ++idCnt, task, true, continuous, uData);
 
         tMutex.lock();
         timerInfos.push_back(t);
@@ -245,6 +246,7 @@ public:
                         // Send message to the respective task
                         TimerMessage tMsg;
                         tMsg.timerID = vItr->timerID;
+                        tMsg.userData = vItr->userData;
                         vItr->task->addMessage(tMsg);
 
                         // If continuous is set, reset expiry; else disable
