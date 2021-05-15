@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <any>
 
 enum class SFType: int32_t
 {
@@ -33,6 +34,7 @@ struct TimerMessage : SFMessage
 {
     // ID of timer that expired
     int32_t timerID;
+    std::any userData;
 
     TimerMessage() : SFMessage(SFType::SFTYPE_TIMER) {}
     virtual ~TimerMessage() {}
