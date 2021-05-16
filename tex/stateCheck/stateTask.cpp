@@ -43,11 +43,13 @@ void StateTask::process_timer(const TimerMessage& tMsg)
 	wngdbg << "Timer ID: " << tMsg.timerID << " Expired" << "\n";
 	if (tMsg.timerID == timerAId)
 	{
-		stateEvent(EVENT_TimerA);
+		cInfo.countA++;
+		stateEvent(EVENT_TimerA, cInfo);
 	}
 	else if (tMsg.timerID == timerBId)
 	{
-		stateEvent(EVENT_TimerB);
+		cInfo.countB++;
+		stateEvent(EVENT_TimerB, cInfo);
 	}
 	else
 	{
@@ -57,15 +59,20 @@ void StateTask::process_timer(const TimerMessage& tMsg)
 
 void StateTask::process_stateMsg(const StateMessage& sMsg)
 {
+	// decisions are auto generated and if they come in at times when 
+	// state is not waiting for decision, it would be ignored
+	// but stops counts may increase.
 	wngdbg << "User decision received : " << sMsg.decision << "\n";
 	switch (sMsg.decision)
 	{
 	case 's':
-		stateEvent(EVENT_Stop);
+		cInfo.stopCount++;
+		stateEvent(EVENT_Stop, cInfo);
 		break; 
 	case 'r':
 	default:
-		stateEvent(EVENT_Restart);
+		cInfo.restartCount++;
+		stateEvent(EVENT_Restart, cInfo);
 		break;
 	}
 }
@@ -109,34 +116,35 @@ void StateTask::start_timers()
 	timerAId = timers.create_timer(1000 + rand() % 10000, this, false);
 	timerBId = timers.create_timer(1000 + rand() % 10000, this, false);
 
-    timers.print_timers();
+	timers.print_timers();
 }
 
-void StateTask::timerA_first()
+void StateTask::timerA_first(std::any info)
 {
 	wngdbg << "Timer A received first. Waiting for Timer B" << "\n";
 }
 
-void StateTask::timerB_first()
+void StateTask::timerB_first(std::any info)
 {
 	wngdbg << "Timer B received first. Waiting for Timer A" << "\n";
 }
 
-void StateTask::end_state()
+void StateTask::end_state(std::any info)
 {
 	wngdbg << "Both Timers Received. Waiting for decision..." << "\n";
 }
 
-void StateTask::restart()
+void StateTask::restart(std::any info)
 {
 	wngdbg << "Restart received." << "\n";
 	timers.enable(timerAId);
 	timers.enable(timerBId);
 }
 
-void StateTask::end_prog()
+void StateTask::end_prog(std::any info)
 {
 	wngdbg << "Stop Received. Terminating..." << "\n";
+	wngdbg << "Info: countA: " << cInfo.countA << ", countB: " << cInfo.countB << ", restarts: " << cInfo.restartCount << ", stops: " << cInfo.stopCount << "\n";
 
 	stopTasks = true;
 }
@@ -185,9 +193,9 @@ void StateTask::setup_stateMc()
 
 }
 
-void StateTask::stateEvent(EVENT e)
+void StateTask::stateEvent(EVENT e, std::any info)
 {
-    wngdbg << "CurrState: " << stateMc->get_currState()  << ", Event: " << e << "\n"; 
-	stateMc->do_actions(this, e);
+	wngdbg << "CurrState: " << stateMc->get_currState()  << ", Event: " << e << "\n"; 
+	stateMc->do_actions(this, e, info);
 	wngdbg << "New State: " << stateMc->get_currState() << "\n";
 }

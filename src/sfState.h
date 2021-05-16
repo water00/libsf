@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <list>
 #include <map>
+#include <any>
 #include "osRelated.h"
 #include "sfDebug.h"
 
@@ -54,7 +55,7 @@ public:
         return 0;
     }
 
-    bool do_actions(OBJTYPE* o, SFEvent e)
+    bool do_actions(OBJTYPE* o, SFEvent e, std::any arg = std::any())
     {
         bool stateChange = false;
 
@@ -71,7 +72,7 @@ public:
                 SFStateAction stateAction = (*(actionUnit)).second;
                 for (typename std::list<SFAction>::iterator lItr = stateAction.actions.begin(); lItr != stateAction.actions.end(); lItr++)
                 {
-                    (o->*(*lItr))();
+                    (o->*(*lItr))(arg);
                 }
                 // Set current State
                 if (currState != stateAction.nextState)
