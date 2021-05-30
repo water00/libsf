@@ -1,82 +1,35 @@
 #pragma once
 
-#include <iostream>
-#include <cstdint>
-#include <cassert>
-#include <thread>
-#include <mutex>
-#include <list>
-#include <map>
-#include <cstring>
-#include "osRelated.h"
-#include "sfDebug.h"
-
-class SFTask;
+#include "sfThreadBase.h"
 
 template <typename PROCESSFN>
-struct ProcessStruct
-{
-    int32_t sock;
-    SFTask* processObj;
-    PROCESSFN processFn;
-};
-
-
-
-template <typename PROCESSFN>
-class SFThread
+class SFThread : public SFThreadBase
 {
 private:
-    typedef ProcessStruct<PROCESSFN> PSTRUCT;
-    std::map<int32_t, PSTRUCT > processFnMap;
-    std::thread iThread;
-    std::recursive_mutex iMutex;
-    bool stopThread;
-    bool stopped;
-
     int maxEpollEvents;
     int epollFd;
-
+    struct epoll_event* events;
+    
 public:
     SFThread() 
     {
-        stopped = false;
-        stopThread = false;
         maxEpollEvents = 0;
         if((epollFd = epoll_create1(0)) < 0)
         {
             SFDebug::SF_print(std::string("Epoll failed: ") + strerror(errno));
         }
-        iThread = std::thread(start_thread, (void*)this);
     }
 
     virtual ~SFThread()
     {
-        stop_thread();
         close(epollFd);
-        iThread.join();
+        if (events)
+        {
+            delete [] events;
+        }
     }
 
-    void stop_thread()
-    {
-        stopThread = true;
-    }
-
-    bool is_stopped()
-    {
-        return stopped;
-    }
-
-    void lock()
-    {
-        iMutex.lock();
-    }
-    void unlock()
-    {
-        iMutex.unlock();
-    }
-
-    bool add_process(const PSTRUCT& p)
+    virtual bool add_process(const PSTRUCT& p)
     {
         if (p.sock < 0 || p.processObj == NULL)
         {
@@ -98,13 +51,19 @@ public:
         else
         {
             maxEpollEvents++;
+            // Delete previous events and create new
+            if (events)
+            {
+                delete [] events;
+            }
+            events = new epoll_event[maxEpollEvents];
         }
         unlock();
 
         return true;
     }
 
-    bool rm_process(int pID)
+    virtual bool rm_process(int pID)
     { 
         bool ret = true;
         int s = 0;
@@ -124,6 +83,12 @@ public:
             else
             {
                 maxEpollEvents--;
+                // Delete previous events and create new
+                if (events)
+                {
+                    delete [] events;
+                }
+                events = new epoll_event[maxEpollEvents];
             }
             processFnMap.erase(pID);
         }
@@ -131,67 +96,25 @@ public:
         return ret;
     }
 
-    void process_fns(int32_t s)
+    virtual int32_t wait_forEvents()
     {
-        lock();
-        PSTRUCT p = processFnMap[s];
-        if (read_msg(p.sock) > 0)
-        {
-            PROCESSFN pFn = p.processFn;
-            (p.processObj->*pFn)();
-        }
-        unlock();
+        return epoll_wait(epollFd, events, maxEpollEvents, 5000);
     }
-
-
-    static void* start_thread(void* data)
+    
+    virtual void process_fns()
     {
-        return static_cast<SFThread<PROCESSFN> *>(data)->thread_run();
-    }
-
-    void* thread_run()
-    {
-        int fdCount = 0;
-
-        stopThread = false;
-        while (!stopThread)
+        for(int i = 0; i < fdCount; i++)
         {
-            struct epoll_event* events = new epoll_event[maxEpollEvents];
-            fdCount = epoll_wait(epollFd, events, maxEpollEvents, 5000);
-            switch (fdCount)
+            sock_size s = events[i].data.fd;
+            PSTRUCT p = processFnMap[s];
+            if (read_msg(p.sock) > 0)
             {
-            case 0:
-                break;
-            case -1:
-                SFDebug::SF_print(std::string("ePoll error, Reason: ") + strerror(errno));
-                break;
-            default:
-                for(int i = 0; i < fdCount; i++)
-                {
-                    process_fns(events[i].data.fd);
-                }
-                break;
+                PROCESSFN pFn = p.processFn;
+                (p.processObj->*pFn)();
             }
-            delete [] events;
         }
-
-        //SFDebug::SF_print(std::string("Thread stopped: ") + pthread_self());
-        stopped = true;
-        return NULL;
     }
 
-    int32_t read_msg(int32_t sock)
-    {
-        // Read the data and throw away as it is just dummy msg
-        char dummy[3];
-        int32_t ret = 0;
-
-        if ((ret = read(sock, dummy, sizeof(dummy))) < 0)
-        {
-            SFDebug::SF_print(std::string("Read failed, Reason: ") + strerror(errno));
-        }
-        return ret;
-    }
 };
 
 
