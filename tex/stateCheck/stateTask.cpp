@@ -119,29 +119,29 @@ void StateTask::start_timers()
 	timers.print_timers();
 }
 
-void StateTask::timerA_first(std::any info)
+void StateTask::timerA_first(const std::any& info)
 {
 	wngdbg << "Timer A received first. Waiting for Timer B" << "\n";
 }
 
-void StateTask::timerB_first(std::any info)
+void StateTask::timerB_first(const std::any& info)
 {
 	wngdbg << "Timer B received first. Waiting for Timer A" << "\n";
 }
 
-void StateTask::end_state(std::any info)
+void StateTask::end_state(const std::any& info)
 {
 	wngdbg << "Both Timers Received. Waiting for decision..." << "\n";
 }
 
-void StateTask::restart(std::any info)
+void StateTask::restart(const std::any& info)
 {
 	wngdbg << "Restart received." << "\n";
 	timers.enable(timerAId);
 	timers.enable(timerBId);
 }
 
-void StateTask::end_prog(std::any info)
+void StateTask::end_prog(const std::any& info)
 {
 	wngdbg << "Stop Received. Terminating..." << "\n";
 	wngdbg << "Info: countA: " << cInfo.countA << ", countB: " << cInfo.countB << ", restarts: " << cInfo.restartCount << ", stops: " << cInfo.stopCount << "\n";
@@ -193,9 +193,48 @@ void StateTask::setup_stateMc()
 
 }
 
-void StateTask::stateEvent(EVENT e, std::any info)
+bool StateTask::addEvent(EVENT e, const std::any& info)
 {
-	wngdbg << "CurrState: " << stateMc->get_currState()  << ", Event: " << e << "\n"; 
-	stateMc->do_actions(this, e, info);
-	wngdbg << "New State: " << stateMc->get_currState() << "\n";
+	lock();
+	// Save the event for processing
+	eventInfos.push_back( {e, info} );
+	// If no event being processed, return true for immediate processing
+	if (eventInfos.size() == 1)
+	{
+		return true;
+	}
+	return false;
+}
+
+bool StateTask::getEvent(EventInfo& eInfo)
+{
+	lock();
+	if (eventInfos.size() > 0)
+	{
+		eInfo = eventInfos.front();
+		return true;
+	}
+	return false;
+}
+
+void StateTask::popEvent()
+{
+	lock();
+	eventInfos.pop_front();
+}
+
+void StateTask::stateEvent(EVENT e, const std::any& info)
+{
+	// Add the event and if it has to be processed, start process
+	if (addEvent(e, info))
+	{
+		EventInfo eInfo;
+		while (getEvent(eInfo))
+		{
+			wngdbg << "CurrState: " << stateMc->get_currState()  << ", Event: " << eInfo.event << "\n"; 
+			stateMc->do_actions(this, eInfo.event, eInfo.info);
+			wngdbg << "New State: " << stateMc->get_currState() << "\n";
+			popEvent();
+		}
+	}
 }
