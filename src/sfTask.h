@@ -2,6 +2,7 @@
 
 #include "sfThread.h"
 #include "sfMessages.h"
+#include "sfMutex.h"
 #include <memory>
 #if defined(_WIN32)
 #include "winSockPair.h"
@@ -16,46 +17,71 @@ typedef void(SFTask::*PROCFN)(void);
 class SFTask
 {   
 private:
-   	std::list<std::shared_ptr<SFMessage> > messages;
-    std::mutex processMutex;
-
+    std::list<std::shared_ptr<SFMessage> > messages;
 protected:
 
     sock_size socks[2];
     inline static int32_t taskCount = 0;
+    bool stopTask;
+    SFMutex sfMutex;
 
 public:
-	inline static SFThread<PROCFN> *sfThread = nullptr;
+    inline static SFThread<PROCFN> *sfThread = nullptr;
+
+    friend SFThreadBase;
 
     SFTask()
     {
         socks[0] = -1;
         socks[1] = -1;
-        
+        stopTask = false;
+
         if (sfThread == nullptr)
         {
             sfThread = new SFThread<PROCFN> ();
         }
         taskCount++;
-
     }
     virtual ~SFTask()
     {
+        // If task processing is going on, wait
+        sfMutex.wait_forProcessEnd();
+        stopTask = true;
+        sfThread->rm_process(socks[0]);
+        shut_down();
+        del_msgs();
+        if (--taskCount == 0)
+        {
+            //delete sfThread;
+        }
+    }
+    void del_msgs()
+    {
+        sfMutex.lock();
         for (auto lItr = messages.begin(); lItr != messages.end(); ++lItr)
         {
             lItr->reset();
         }
         messages.clear();
-        if (--taskCount == 0)
-        {
-            delete sfThread;
-        }
+
     }
-   	virtual void processFn()  = 0;
+    bool task_stopped()
+    {
+        return stopTask;
+    }
+    void start_process()
+    {
+        sfMutex.wait_forProcessStart();
+    }
+    void end_process()
+    {
+        sfMutex.end_process();
+    }
+    virtual void processFn()  = 0;
 
     virtual void shut_down()
     {
-        processMutex.lock();
+        sfMutex.lock();
         if (socks[0] > 0 && socks[1] > 0)
         {
             #ifdef _WIN32
@@ -67,17 +93,15 @@ public:
             #endif
             socks[0] = socks[1] = -1;
         }
-        processMutex.unlock();
     }
     template <typename T>
     bool addMessage(const T& msg)
     {
         bool ret = false;
+        sfMutex.lock();
         if (socks[0] > 0 && socks[1] > 0)
         {
-            processMutex.lock();
             messages.push_back(std::make_shared<T>(msg));
-            processMutex.unlock();
             // Indicate(send) that message is ready
             ret = send_msg(socks[1]) > 0 ? true : false;
         }
@@ -88,14 +112,13 @@ public:
     bool getMessage(T& msg)
     {
         bool ret = false;
-        processMutex.lock();
+        sfMutex.lock();
         if (!messages.empty())
         {
             msg = *(dynamic_cast<T*>(messages.front().get()));
             messages.pop_front();
             ret = true;
         }
-        processMutex.unlock();
 
         return ret;
     }
@@ -104,28 +127,24 @@ public:
     bool peekMessage(T& msg)
     {
         bool ret = false;
-        processMutex.lock();
+        sfMutex.lock();
         if (!messages.empty())
         {
             msg = *(dynamic_cast<T*>(messages.front().get()));
             ret = true;
         }
-        processMutex.unlock();
-
         return ret;
     }
 
     bool getMessageType(SFType& type)
     {
         bool ret = false;
-        processMutex.lock();
+        sfMutex.lock();
         if (!messages.empty())
         {
             type = messages.front()->getType();
             ret = true;
         }
-        processMutex.unlock();
-
         return ret;
     }
 

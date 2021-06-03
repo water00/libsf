@@ -5,11 +5,13 @@
 #include <cassert>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <list>
 #include <map>
 #include <cstring>
 #include "osRelated.h"
 #include "sfDebug.h"
+#include "sfMutex.h"
 
 class SFTask;
 
@@ -30,7 +32,7 @@ protected:
     typedef ProcessStruct<PROCESSFN> PSTRUCT;
     std::map<sock_size, PSTRUCT > processFnMap;
     std::thread iThread;
-    std::recursive_mutex iMutex;
+    SFMutex sfMutex;
     bool stopThread;
     bool stopped;
     int32_t fdCount;
@@ -46,7 +48,9 @@ public:
 
     virtual ~SFThreadBase()
     {
+        //sfMutex.wait_forProcessEnd();
         stop_thread();
+        //sfMutex.restart_process();
         iThread.join();
     }
 
@@ -60,10 +64,9 @@ public:
         return stopped;
     }
 
-    inline void lock() { std::lock_guard<std::recursive_mutex> lock(iMutex); }
 
     virtual bool add_process(const PSTRUCT& p) = 0;
-    virtual bool rm_process(int pID) = 0;
+    virtual bool rm_process(sock_size pID) = 0;
     virtual int32_t wait_forEvents() = 0;
     virtual void process_fns() = 0;
     
@@ -78,7 +81,11 @@ public:
         while (!stopThread)
         {
             {
-                lock();
+                sfMutex.wait_forProcessStart();
+                if (stopThread)
+                {
+                    break;
+                }
                 fdCount = wait_forEvents();
                 switch (fdCount)
                 {
@@ -92,6 +99,7 @@ public:
                     process_fns();
                     break;
                 }
+                sfMutex.end_process();
             }
         }
 

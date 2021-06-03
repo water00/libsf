@@ -19,6 +19,10 @@ public:
         tv.tv_sec = 5;
         tv.tv_usec = 0;
     }
+    virtual ~SFThread()
+    {
+        std::cout << __FUNCTION__ << std::endl;
+    }
 
     virtual bool add_process(const PSTRUCT& p)
     {
@@ -26,17 +30,16 @@ public:
         {
             return false;
         }
-        lock();
+        sfMutex.lock();
         processFnMap[p.sock] = p;
 
         return true;
     }
 
-    virtual bool rm_process(int pID)
+    virtual bool rm_process(sock_size pID)
     { 
         bool ret = true;
-        int s = 0;
-        lock();
+        sfMutex.lock();
         typename std::map<sock_size, PSTRUCT>::iterator mItr = processFnMap.find(pID);
  
         if (mItr == processFnMap.end())
@@ -72,10 +75,17 @@ public:
         for (typename std::map<sock_size, PSTRUCT >::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
             PSTRUCT p = mItr->second;
+            if (p.sock <= 0)
+                continue;
             if (FD_ISSET(p.sock, &readfds) && (read_msg(p.sock) > 0))
             {
                 PROCESSFN pFn = p.processFn;
-                (p.processObj->*pFn)();
+                if (p.processObj && !p.processObj->task_stopped())
+                {
+                    p.processObj->start_process();
+                    (p.processObj->*pFn)();
+                    p.processObj->end_process();
+                }
             }
         }
     }

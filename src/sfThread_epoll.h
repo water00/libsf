@@ -19,6 +19,9 @@ public:
             SFDebug::SF_print(std::string("Epoll failed: ") + strerror(errno));
         }
     }
+    virtual ~SFThread()
+    {
+    }
 
     virtual ~SFThread()
     {
@@ -35,7 +38,7 @@ public:
         {
             return false;
         }
-        lock();
+        sfMutex.lock();
         processFnMap[p.sock] = p;
 
         struct epoll_event event;
@@ -58,16 +61,14 @@ public:
             }
             events = new epoll_event[maxEpollEvents];
         }
-        unlock();
 
         return true;
     }
 
-    virtual bool rm_process(int pID)
+    virtual bool rm_process(sock_size pID)
     { 
         bool ret = true;
-        int s = 0;
-        lock();
+        sfMutex.lock();
         typename std::map<int32_t, PSTRUCT>::iterator mItr = processFnMap.find(pID);
  
         if (mItr == processFnMap.end())
@@ -92,7 +93,6 @@ public:
             }
             processFnMap.erase(pID);
         }
-        unlock();
         return ret;
     }
 
@@ -110,7 +110,12 @@ public:
             if (read_msg(p.sock) > 0)
             {
                 PROCESSFN pFn = p.processFn;
-                (p.processObj->*pFn)();
+                if (p.processObj && !p.processObj->task_stopped())
+                {
+                    p.processObj->start_process();
+                    (p.processObj->*pFn)();
+                    p.processObj->end_process();
+                }
             }
         }
     }
