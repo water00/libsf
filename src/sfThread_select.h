@@ -21,7 +21,6 @@ public:
     }
     virtual ~SFThread()
     {
-        std::cout << __FUNCTION__ << std::endl;
     }
 
     virtual bool add_process(const PSTRUCT& p)
@@ -56,8 +55,9 @@ public:
     virtual int32_t wait_forEvents()
     {
         nfds = 0;
-        fdCount = 0;
         FD_ZERO(&readfds);
+        sfMutex.lock();
+        if (is_stopped() || !processFnMap.size()) return 0;
         for (typename std::map<sock_size, PSTRUCT>::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
             nfds = std::max<sock_size>(nfds,  mItr->second.sock);
@@ -65,13 +65,15 @@ public:
         }
         if (nfds > 0)
         {
-            fdCount = select((int32_t)nfds+1, &readfds, NULL, NULL, &tv);
+            return select((int32_t)nfds+1, &readfds, NULL, NULL, &tv);
         }
-        return fdCount;
+        return 0;
     }
 
     virtual void process_fns()
     {
+        sfMutex.lock();
+        if (is_stopped() || !processFnMap.size()) return;
         for (typename std::map<sock_size, PSTRUCT >::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
             PSTRUCT p = mItr->second;

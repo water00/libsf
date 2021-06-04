@@ -6,23 +6,21 @@ template <typename PROCESSFN>
 class SFThread : public SFThreadBase
 {
 private:
-    int maxEpollEvents;
-    int epollFd;
+    int32_t maxEpollEvents;
+    int32_t epollFd;
+    int32_t fdCount;
     struct epoll_event* events;
     
 public:
     SFThread() 
     {
         maxEpollEvents = 0;
+        fdCount = 0;
         if((epollFd = epoll_create1(0)) < 0)
         {
             SFDebug::SF_print(std::string("Epoll failed: ") + strerror(errno));
         }
     }
-    virtual ~SFThread()
-    {
-    }
-
     virtual ~SFThread()
     {
         close(epollFd);
@@ -98,11 +96,16 @@ public:
 
     virtual int32_t wait_forEvents()
     {
-        return epoll_wait(epollFd, events, maxEpollEvents, 5000);
+        sfMutex.lock();
+        if (is_stopped()) return;
+        fdCount = epoll_wait(epollFd, events, maxEpollEvents, 5000);
+        return fdCount;
     }
     
     virtual void process_fns()
     {
+        sfMutex.lock();
+        if (is_stopped()) return;
         for(int i = 0; i < fdCount; i++)
         {
             sock_size s = events[i].data.fd;

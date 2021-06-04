@@ -52,7 +52,8 @@ public:
         del_msgs();
         if (--taskCount == 0)
         {
-            //delete sfThread;
+            sfThread->stop_thread();
+            delete sfThread;
         }
     }
     void del_msgs()
