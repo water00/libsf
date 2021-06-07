@@ -124,6 +124,15 @@ public:
         return ret;
     }
 
+    int32_t getNumMessages()
+    {
+        int32_t ret = 0;
+        sfMutex.lock();
+        ret = (int32_t)messages.size();
+
+        return ret;
+    }
+
     template <typename T>
     bool peekMessage(T& msg)
     {
