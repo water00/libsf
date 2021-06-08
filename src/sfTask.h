@@ -78,6 +78,15 @@ public:
     {
         sfMutex.end_process();
     }
+    virtual void wait_forProcessEnd() 
+    { 
+        sfMutex.wait_forProcessEnd(); 
+    }
+    virtual void restart_process() 
+    { 
+        sfMutex.restart_process(); 
+    }
+
     virtual void processFn()  = 0;
 
     virtual void shut_down()
