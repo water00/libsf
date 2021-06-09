@@ -56,6 +56,16 @@ public:
             delete sfThread;
         }
     }
+    // Call do_endProcess before deleting the task
+    // so that residual messages are processed.
+    virtual void do_endProcess()
+    {
+        while(getNumMessages())
+        {
+            sleep(1);
+        }
+        sfMutex.wait_forProcessEnd();
+    }
     void del_msgs()
     {
         sfMutex.lock();
