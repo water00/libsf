@@ -28,8 +28,6 @@ protected:
 public:
     inline static SFThread<PROCFN> *sfThread = nullptr;
 
-    friend SFThreadBase;
-
     SFTask()
     {
         socks[0] = -1;

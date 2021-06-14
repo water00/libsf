@@ -36,6 +36,10 @@ struct TimerMessage : SFMessage
     int32_t timerID;
     std::any userData;
 
-    TimerMessage() : SFMessage(SFType::SFTYPE_TIMER) {}
+    TimerMessage() : 
+        SFMessage(SFType::SFTYPE_TIMER),
+        timerID(0) 
+        {
+        }
     virtual ~TimerMessage() {}
 };

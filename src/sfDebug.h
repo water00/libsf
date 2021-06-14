@@ -8,7 +8,7 @@
 #include <sstream>
 #include <cerrno>
 
-enum DebugLevel
+enum class DebugLevel
 {
     DBG_None,
     DBG_Error,
@@ -18,7 +18,7 @@ enum DebugLevel
 };
 
 // Foreground Colors
-enum Colors 
+enum class Colors 
 {
     Color_Default = 39,
     Color_Black = 30,
@@ -52,7 +52,7 @@ private:
     bool fileOut;
 	
 public:
-    SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), Colors clr = Color_Default, std::string fName = "stdout")
+    SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), Colors clr = Colors::Color_Default, std::string fName = "stdout")
     {
         dbgLevel = dbgLvl;
         maxDbg = max_dbg();
