@@ -48,7 +48,7 @@ struct TimerInfo
         int64_t r = expiryMs - get_now();
         if (r < 0)
         {
-            // In Windows, select doesn't work timeval is set to {0, 0}
+            // In Windows, select doesn't work if timeval is set to {0, 0}
             // So return 1 
             #if defined(_WIN32)
             return 1;
@@ -174,6 +174,8 @@ public:
                 // Reset timer expiry
                 vItr->reset_expiry();
                 vItr->enabled = true;
+                // Re-sort
+                std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
                 ret = true;
                 break;
             }
@@ -190,6 +192,8 @@ public:
             if (vItr->timerID == tID)
             {
                 vItr->enabled = false;
+                // Re-sort
+                std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
                 ret = true;
                 break;
             }
