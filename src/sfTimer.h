@@ -46,15 +46,11 @@ struct TimerInfo
     uint64_t ms_left()
     {
         int64_t r = expiryMs - get_now();
-        if (r < 0)
+        if (r <= 0)
         {
-            // In Windows, select doesn't work if timeval is set to {0, 0}
-            // So return 1 
-            #if defined(_WIN32)
+            // Return 1 to process immediately
+            // Returning 0 will wait indefinitely
             return 1;
-            #else
-            return 0;
-            #endif
         }
         return r;
     }
@@ -83,7 +79,6 @@ struct Sorter
         {
             return true;
         }
-        
         return (a.expiryMs < b.expiryMs);
     }
 
@@ -149,6 +144,7 @@ public:
         tMutex.unlock();
         return ret;
     }
+
     void print_timers()
     {
         tMutex.lock();
@@ -163,6 +159,7 @@ public:
         }
         tMutex.unlock();
     }
+
     bool enable(uint32_t tID)
     {
         bool ret = false;
@@ -183,6 +180,7 @@ public:
         tMutex.unlock();
         return ret;
     }
+
     bool disable(int32_t tID)
     {
         bool ret = false;
@@ -207,6 +205,49 @@ public:
         SFTimer* timer = static_cast<SFTimer*>(ptr);
         timer->process();
     }
+
+    void process_timers()
+    {
+        tMutex.lock();
+        auto vItr = timerInfos.begin();
+
+        while (vItr != timerInfos.end() && vItr->enabled && vItr->is_expired())
+        {
+            // Send message to the respective task
+            TimerMessage tMsg;
+            tMsg.timerID = vItr->timerID;
+            tMsg.userData = vItr->userData;
+            vItr->task->addMessage(tMsg);
+
+            // If continuous is set, reset expiry; else disable
+            if (vItr->continuous)
+            {
+                #ifdef TIMER_DEBUG
+                std::stringstream ss;
+                ss << "TimerID: " << vItr->timerID << " is Continuous. Resetting";
+                SFDebug::SF_print(ss.str());
+                #endif
+
+                vItr->reset_expiry();
+            }
+            else
+            {
+                #ifdef TIMER_DEBUG
+                std::stringstream ss;
+                ss << "TimerID: " << vItr->timerID << " is Not Continuous. Disabling";
+                SFDebug::SF_print(ss.str());
+                #endif
+
+                vItr->enabled = false;
+            }
+            // Re-sort
+            std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
+            // Restart check with the top 
+            vItr = timerInfos.begin();
+        }
+        tMutex.unlock();
+    }
+
     void process()
     {
         while(!stopThread)
@@ -226,71 +267,29 @@ public:
 
             if (msLeft == 0)
             {
-                #ifdef TIMER_DEBUG
-                //SFDebug::SF_print("No timers left. ...");
-                #endif
                 sleep(1);
                 continue;
             }
 
-            // In windows, with all fds set to NULL, when timer expires
-            // -1 is returned instead of 0. Am I doing something wrong?
-            switch(select(0, NULL, NULL, NULL, &tv))
-            {
-            case 0:
+            // For Windows simply sleep for the time & process
+            // Using select in Windows doesn't work as it requires atleast
+            // one fd to be set.
             #if defined(_WIN32)
-            case -1:
-            #endif
+                Sleep((int32_t)msLeft);
+                process_timers();
+            #else
+                switch(select(0, NULL, NULL, NULL, &tv))
                 {
-                    tMutex.lock();
-                    auto vItr = timerInfos.begin();
-
-                    while (vItr != timerInfos.end() && vItr->enabled && vItr->is_expired())
-                    {
-                        // Send message to the respective task
-                        TimerMessage tMsg;
-                        tMsg.timerID = vItr->timerID;
-                        tMsg.userData = vItr->userData;
-                        vItr->task->addMessage(tMsg);
-
-                        // If continuous is set, reset expiry; else disable
-                        if (vItr->continuous)
-                        {
-                            #ifdef TIMER_DEBUG
-                            std::stringstream ss;
-                            ss << "TimerID: " << vItr->timerID << " is Continuous. Resetting";
-                            SFDebug::SF_print(ss.str());
-                            #endif
-
-                            vItr->reset_expiry();
-                        }
-                        else
-                        {
-                            #ifdef TIMER_DEBUG
-                            std::stringstream ss;
-                            ss << "TimerID: " << vItr->timerID << " is Not Continuous. Disabling";
-                            SFDebug::SF_print(ss.str());
-                            #endif
-
-                            vItr->enabled = false;
-                        }
-                        // Re-sort
-                        std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
-                        // Restart check with the top 
-                        vItr = timerInfos.begin();
-                    }
-                    tMutex.unlock();
-                    
+                case 0:
+                    process_timers();
+                    break;
+                case -1:
+                    SFDebug::SF_print(std::string("Timer Select failed, Reason: ") + strerror(errno));
+                    break;
+                default:
+                    break;
                 }
-                break;
-            #if !defined(_WIN32)
-            case -1:
-                SFDebug::SF_print(std::string("Timer Select failed, Reason: ") + strerror(errno));
-                break;
             #endif
-            default:
-                break;
-            }
         }
     }
 };
