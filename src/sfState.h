@@ -1,12 +1,12 @@
 #pragma once
 
+#include "osRelated.h"
 #include <iostream>
 #include <stdint.h>
 #include <assert.h>
 #include <list>
 #include <map>
 #include <any>
-#include "osRelated.h"
 #include "sfDebug.h"
 
 #define STATE_DEBUG

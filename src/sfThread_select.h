@@ -54,9 +54,9 @@ public:
 
     virtual int32_t wait_forEvents()
     {
+        sfMutex.lock();
         nfds = 0;
         FD_ZERO(&readfds);
-        sfMutex.lock();
         if (is_stopped() || !processFnMap.size()) return 0;
         for (typename std::map<sock_size, PSTRUCT>::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {

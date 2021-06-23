@@ -1,26 +1,20 @@
 #pragma once
 
+#include "osRelated.h"
 #include "sfThread.h"
 #include "sfMessages.h"
 #include "sfMutex.h"
 #include <memory>
-#if defined(_WIN32)
-#include "winSockPair.h"
-// To check memory leak
-#ifdef VLD
-#include <vld.h>
-#endif
-#endif
 
 typedef void(SFTask::*PROCFN)(void);
 
 class SFTask
-{   
+{
 private:
     std::list<std::shared_ptr<SFMessage> > messages;
-protected:
-
+public:
     sock_size socks[2];
+protected:
     inline static int32_t taskCount = 0;
     bool stopTask;
     SFMutex sfMutex;

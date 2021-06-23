@@ -1,5 +1,6 @@
 #pragma once
 
+#include "osRelated.h"
 #include <iostream>
 #include <cstdint>
 #include <cassert>
@@ -9,7 +10,6 @@
 #include <list>
 #include <map>
 #include <cstring>
-#include "osRelated.h"
 #include "sfDebug.h"
 #include "sfMutex.h"
 
