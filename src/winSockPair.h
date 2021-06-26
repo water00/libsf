@@ -1,6 +1,8 @@
 
 #pragma once
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <stdint.h>
 #include <WinSock2.h>
 #include <afunix.h>

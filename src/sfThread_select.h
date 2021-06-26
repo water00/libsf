@@ -60,8 +60,12 @@ public:
         if (is_stopped() || !processFnMap.size()) return 0;
         for (typename std::map<sock_size, PSTRUCT>::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
         {
-            nfds = std::max<sock_size>(nfds,  mItr->second.sock);
-            FD_SET(mItr->second.sock, &readfds);
+            sock_size s = mItr->second.sock;
+            if (s > 0)
+            {
+                nfds = std::max<sock_size>(nfds, s);
+                FD_SET(s, &readfds);
+            }
         }
         if (nfds > 0)
         {
