@@ -18,7 +18,7 @@ enum class DebugLevel
 };
 
 // Foreground Colors
-enum class Colors 
+enum class SFColors 
 {
     Color_Default = 39,
     Color_Black = 30,
@@ -52,7 +52,7 @@ private:
     bool fileOut;
 	
 public:
-    SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), Colors clr = Colors::Color_Default, std::string fName = "stdout")
+    SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), SFColors clr = SFColors::Color_Default, std::string fName = "stdout")
     {
         dbgLevel = dbgLvl;
         maxDbg = max_dbg();

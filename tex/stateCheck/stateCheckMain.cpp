@@ -5,12 +5,12 @@
 
 bool stopTasks = false;
 
-DebugLevel max_debug() { return DBG_Info; }
+DebugLevel max_debug() { return DebugLevel::DBG_Info; }
 
-SFDebug errdbg(DBG_Error, max_debug, Color_Red, "ErrOut");		// Prints to file
-SFDebug wngdbg(DBG_Warning, max_debug, Color_Blue, "stderr");	// Prints to stderr
-SFDebug ifodbg(DBG_Info, max_debug, Color_Cyan);				// Prints to stdout
-SFDebug vbsdbg(DBG_Verbose, max_debug, Color_White);
+SFDebug errdbg(DebugLevel::DBG_Error, max_debug, SFColors::Color_Red, "ErrOut");		// Prints to file
+SFDebug wngdbg(DebugLevel::DBG_Warning, max_debug, SFColors::Color_Blue, "stderr");	// Prints to stderr
+SFDebug ifodbg(DebugLevel::DBG_Info, max_debug, SFColors::Color_Cyan);				// Prints to stdout
+SFDebug vbsdbg(DebugLevel::DBG_Verbose, max_debug, SFColors::Color_White);
 
 void decide(StateTask& stateTask)
 {
