@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string>
 #include <list>
-#include "sfTask.h"
+#include "../../src/sfTask.h"
 
 
 class Task : public SFTask

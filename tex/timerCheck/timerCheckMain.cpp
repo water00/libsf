@@ -1,7 +1,8 @@
 #include <iostream>
 #include <string>
-#include "../src/sfTimer.h"
+#include "../../src/sfTimer.h"
 #include "timerTask.h"
+#include "../../src/sfTask.h"
 
 bool stopTasks = false;
 
@@ -28,6 +29,4 @@ int main()
     {
         sleep(1);
     }
-
-	SFTask::sfThread->stop_thread();
 }

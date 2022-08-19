@@ -1,9 +1,11 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include "../src/sfThread.h"
-#include "../src/sfTimer.h"
+#include "../../src/sfThread.h"
+#include "../../src/sfTimer.h"
 #include "timerTask.h"
+#include "../../src/sfMessages.h"
+#include "../../src/sfTask.h"
 
 extern bool toss();
 extern bool stopTasks;

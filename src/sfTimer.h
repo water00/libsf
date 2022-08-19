@@ -145,6 +145,24 @@ public:
         return ret;
     }
 
+    void delete_allTimer()
+    {
+        tMutex.lock();
+        for (auto vItr = timerInfos.begin(); vItr != timerInfos.end(); ++vItr)
+        {
+            timerInfos.erase(vItr);
+        }
+        timerInfos.clear();
+        tMutex.unlock();
+    }
+    int32_t num_timers()
+    {
+        int32_t ret = 0;
+        tMutex.lock();
+        ret = static_cast<int32_t>(timerInfos.size());
+        tMutex.unlock();
+        return ret;
+    }
     void print_timers()
     {
         tMutex.lock();
@@ -217,7 +235,7 @@ public:
             TimerMessage tMsg;
             tMsg.timerID = vItr->timerID;
             tMsg.userData = vItr->userData;
-            vItr->task->addMessage(tMsg);
+            if (vItr->task) vItr->task->addMessage(tMsg);
 
             // If continuous is set, reset expiry; else disable
             if (vItr->continuous)

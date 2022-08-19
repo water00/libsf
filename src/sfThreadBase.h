@@ -34,7 +34,7 @@ protected:
     std::thread iThread;
     SFMutex sfMutex;
     std::atomic_bool stopThread = false;
-    bool stopped;
+    std::atomic_bool stopped = false;
 
 public:
     SFThreadBase() 
@@ -45,6 +45,7 @@ public:
 
     virtual ~SFThreadBase()
     {
+        stop_thread();
     }
 
     void stop_thread()
@@ -58,6 +59,19 @@ public:
         return stopped;
     }
 
+    int64_t get_processCount()
+    {
+        sfMutex.lock();
+        return processFnMap.size();
+    }
+    virtual void wait_forProcessEnd() 
+    { 
+        sfMutex.wait_forProcessEnd(); 
+    }
+    virtual void restart_process() 
+    { 
+        sfMutex.restart_process(); 
+    }
 
     virtual bool add_process(const PSTRUCT& p) = 0;
     virtual bool rm_process(sock_size pID) = 0;
@@ -78,6 +92,7 @@ public:
                 sfMutex.wait_forProcessStart();
                 if (stopThread) break;
                 int32_t count = wait_forEvents();
+                if (stopThread) break;
                 switch (count)
                 {
                 case 0:
@@ -90,6 +105,7 @@ public:
                     process_fns();
                     break;
                 }
+                if (stopThread) break;
                 sfMutex.end_process();
             }
         }

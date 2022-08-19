@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <vector>
 #include "task.h"
+#include "../../src/sfDebug.h"
+#include "../../src/sfMessages.h"
+#include "../../src/sfTask.h"
 
 using namespace std;
 
@@ -63,13 +66,6 @@ int main(int argc, char** argv)
 		sleep(1);
 	}
 
-	SFTask::sfThread->stop_thread();
-	/*
-	while (!SFTask::sfThread->is_stopped())
-	{
-		sleep(1);
-	}
-	*/
 
 	for (int i = 0; i < numProcess; i++)
 	{

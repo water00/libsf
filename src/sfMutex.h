@@ -13,8 +13,8 @@ class SFMutex
 protected:
     std::mutex mutex;
     std::condition_variable condVar;
-    bool inProcess;
-    bool startProcess;
+    std::atomic_bool inProcess;
+    std::atomic_bool startProcess;
 
 public:
     SFMutex() 

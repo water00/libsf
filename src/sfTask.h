@@ -15,8 +15,7 @@ private:
 public:
     sock_size socks[2];
 protected:
-    inline static int32_t taskCount = 0;
-    bool stopTask;
+    std::atomic_bool stopTask;
     SFMutex sfMutex;
 
 public:
@@ -32,30 +31,43 @@ public:
         {
             sfThread = new SFThread<PROCFN> ();
         }
-        taskCount++;
     }
     virtual ~SFTask()
     {
+        SFDebug::SF_print(__FUNCTION__);
         // If task processing is going on, wait
         sfMutex.wait_forProcessEnd();
+        sfMutex.lock();
         stopTask = true;
-        sfThread->rm_process(socks[0]);
-        shut_down();
         del_msgs();
-        if (--taskCount == 0)
+        if (sfThread)
         {
-            sfThread->stop_thread();
-            delete sfThread;
+            sfThread->rm_process(socks[0]);
+            shut_down();
+            int64_t count;
+            if ((count = sfThread->get_processCount()) == 0)
+            {
+                delete sfThread;
+                sfThread = nullptr;
+            }
+            else
+            {
+                //std::stringstream ss;
+                //ss << "Process Count: " << count;
+                //SFDebug::SF_print(ss.str());
+            }
         }
     }
     // Call do_endProcess before deleting the task
     // so that residual messages are processed.
     virtual void do_endProcess()
     {
+	/*
         while(getNumMessages())
         {
             sleep(1);
         }
+	*/
         sfMutex.wait_forProcessEnd();
     }
     void del_msgs()
@@ -67,6 +79,11 @@ public:
         }
         messages.clear();
 
+    }
+    void stop_task()
+    {
+        sfMutex.lock();
+        stopTask = true;
     }
     bool task_stopped()
     {

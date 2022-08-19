@@ -37,17 +37,14 @@ public:
 
     virtual bool rm_process(sock_size pID)
     { 
-        bool ret = true;
+        bool ret = false;
         sfMutex.lock();
         typename std::map<sock_size, PSTRUCT>::iterator mItr = processFnMap.find(pID);
  
-        if (mItr == processFnMap.end())
-        {
-            ret = false;
-        }
-        else
+        if (mItr != processFnMap.end())
         {
             processFnMap.erase(pID);
+            ret = true;
         }
         return ret;
     }
@@ -83,16 +80,16 @@ public:
             PSTRUCT p = mItr->second;
             if (p.sock <= 0)
                 continue;
+            PROCESSFN pFn = p.processFn;
+            p.processObj->start_process();
             if (FD_ISSET(p.sock, &readfds) && (read_msg(p.sock) > 0))
             {
-                PROCESSFN pFn = p.processFn;
                 if (p.processObj && !p.processObj->task_stopped())
                 {
-                    p.processObj->start_process();
                     (p.processObj->*pFn)();
-                    p.processObj->end_process();
                 }
             }
+            p.processObj->end_process();
         }
     }
 
