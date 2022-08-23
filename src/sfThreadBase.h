@@ -45,12 +45,17 @@ public:
 
     virtual ~SFThreadBase()
     {
+        SFDebug::SF_print(__FUNCTION__);
         stop_thread();
+        SFDebug::SF_print(__FUNCTION__);
     }
 
     void stop_thread()
     {
+        sfMutex.wait_forProcessEnd();
+        sfMutex.lock();
         stopThread = true;
+        sfMutex.restart_process();
         iThread.join();
     }
 

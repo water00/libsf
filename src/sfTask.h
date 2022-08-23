@@ -42,7 +42,9 @@ public:
         del_msgs();
         if (sfThread)
         {
+            sfThread->wait_forProcessEnd();
             sfThread->rm_process(socks[0]);
+            //sfThread->restart_process();
             shut_down();
             int64_t count;
             if ((count = sfThread->get_processCount()) == 0)
@@ -56,6 +58,10 @@ public:
                 //ss << "Process Count: " << count;
                 //SFDebug::SF_print(ss.str());
             }
+        }
+        if (sfThread)
+        {
+            sfThread->restart_process();
         }
     }
     // Call do_endProcess before deleting the task
