@@ -150,9 +150,16 @@ public:
         sfMutex.lock();
         if (!messages.empty())
         {
-            msg = *(dynamic_cast<T*>(messages.front().get()));
-            messages.pop_front();
-            ret = true;
+            if (messages.front() == nullptr)
+            {
+                messages.pop_front();
+            }
+            else
+            {
+                msg = *(dynamic_cast<T*>(messages.front().get()));
+                messages.pop_front();
+                ret = true;
+            }
         }
 
         return ret;
@@ -174,8 +181,15 @@ public:
         sfMutex.lock();
         if (!messages.empty())
         {
-            msg = *(dynamic_cast<T*>(messages.front().get()));
-            ret = true;
+            if (messages.front() == nullptr)
+            {
+                messages.pop_front();
+            }
+            else
+            {
+                msg = *(dynamic_cast<T*>(messages.front().get()));
+                ret = true;
+            }
         }
         return ret;
     }
@@ -186,8 +200,15 @@ public:
         sfMutex.lock();
         if (!messages.empty())
         {
-            type = messages.front()->getType();
-            ret = true;
+            if (messages.front() == nullptr)
+            {
+                messages.pop_front();
+            }
+            else
+            {
+                type = messages.front()->getType();
+                ret = true;
+            }
         }
         return ret;
     }
