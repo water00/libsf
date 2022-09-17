@@ -71,30 +71,6 @@ public:
         return 0;
     }
 
-/*
-    virtual void process_fns()
-    {
-        sfMutex.lock();
-        if (is_stopped() || !processFnMap.size()) return;
-        for (typename std::map<sock_size, PSTRUCT >::iterator mItr = processFnMap.begin(); mItr != processFnMap.end(); ++mItr)
-        {
-            PSTRUCT p = mItr->second;
-            if (p.sock <= 0)
-                continue;
-            PROCESSFN pFn = p.processFn;
-            p.processObj->start_process();
-            if (FD_ISSET(p.sock, &readfds) && (read_msg(p.sock) > 0))
-            {
-                if (p.processObj && !p.processObj->task_stopped())
-                {
-                    (p.processObj->*pFn)();
-                }
-            }
-            p.processObj->end_process();
-        }
-    }
-*/
-
     virtual void process_fns()
     {
         sfMutex.lock();
@@ -103,13 +79,17 @@ public:
         {
             PSTRUCT p = mItr->second;
             PROCESSFN pFn = p.processFn;
-            if (p.processObj && !p.processObj->task_stopped() && p.processObj->getNumMessages() > 0 && p.sock> 0)
+            if (
+                p.processObj && 
+                !p.processObj->task_stopped() && 
+                p.sock > 0 &&
+                FD_ISSET(p.sock, &readfds) && 
+                (read_msg(p.sock) > 0) && 
+                p.processObj->getNumMessages() > 0 
+            )
             {
                 p.processObj->start_process();
-                if (FD_ISSET(p.sock, &readfds) && (read_msg(p.sock) > 0))
-                {
-                    (p.processObj->*pFn)();
-                }
+                (p.processObj->*pFn)();
                 p.processObj->end_process();
             }
         }

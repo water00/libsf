@@ -19,7 +19,7 @@
 #include "sfTask.h"
 #include "sfMessages.h"
 
-#define TIMER_DEBUG
+#define TIMER_DEBUG 0
 
 struct TimerInfo
 {
@@ -240,7 +240,7 @@ public:
             // If continuous is set, reset expiry; else disable
             if (vItr->continuous)
             {
-                #ifdef TIMER_DEBUG
+                #if (TIMER_DEBUG > 0)
                 std::stringstream ss;
                 ss << "TimerID: " << vItr->timerID << " is Continuous. Resetting";
                 SFDebug::SF_print(ss.str());
@@ -250,7 +250,7 @@ public:
             }
             else
             {
-                #ifdef TIMER_DEBUG
+                #if (TIMER_DEBUG > 0)
                 std::stringstream ss;
                 ss << "TimerID: " << vItr->timerID << " is Not Continuous. Disabling";
                 SFDebug::SF_print(ss.str());

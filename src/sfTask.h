@@ -42,13 +42,14 @@ public:
         del_msgs();
         if (sfThread)
         {
-            sfThread->wait_forProcessEnd();
+            sfThread->stop_process();
             sfThread->rm_process(socks[0]);
             //sfThread->restart_process();
             shut_down();
             int64_t count;
             if ((count = sfThread->get_processCount()) == 0)
             {
+                sleep(1);
                 delete sfThread;
                 sfThread = nullptr;
             }

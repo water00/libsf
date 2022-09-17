@@ -31,7 +31,7 @@ class SFThreadBase
 protected:
     typedef ProcessStruct<PROCESSFN> PSTRUCT;
     std::map<sock_size, PSTRUCT > processFnMap;
-    std::thread iThread;
+    std::thread* iThread;
     SFMutex sfMutex;
     std::atomic_bool stopThread = false;
     std::atomic_bool stopped = false;
@@ -39,29 +39,27 @@ protected:
 public:
     SFThreadBase() 
     {
-        stopped = false;
-        iThread = std::thread(start_thread, (void*)this);
+        iThread = new std::thread(&SFThreadBase::start_thread, this);
     }
 
     virtual ~SFThreadBase()
     {
         SFDebug::SF_print(__FUNCTION__);
-        stop_thread();
-        SFDebug::SF_print(__FUNCTION__);
-    }
-
-    void stop_thread()
-    {
-        sfMutex.wait_forProcessEnd();
-        sfMutex.lock();
+        sfMutex.stop();
         stopThread = true;
-        sfMutex.restart_process();
-        iThread.join();
+        sfMutex.notify();
+        while (!stopped) sleep(1);
+        iThread->join();
+        delete iThread;
     }
 
+    virtual void stop_thread()
+    {
+        stopThread = true;
+    }
     bool is_stopped()
     {
-        return stopped;
+        return stopThread || stopped;
     }
 
     int64_t get_processCount()
@@ -76,6 +74,10 @@ public:
     virtual void restart_process() 
     { 
         sfMutex.restart_process(); 
+    }
+    virtual void stop_process()
+    {
+        sfMutex.stop_process();
     }
 
     virtual bool add_process(const PSTRUCT& p) = 0;
@@ -93,29 +95,26 @@ public:
         stopThread = false;
         while (!stopThread)
         {
+            sfMutex.wait_forProcessStart();
+            if (stopThread) break;
+            int32_t count = wait_forEvents();
+            if (stopThread) break;
+            switch (count)
             {
-                sfMutex.wait_forProcessStart();
-                if (stopThread) break;
-                int32_t count = wait_forEvents();
-                if (stopThread) break;
-                switch (count)
-                {
-                case 0:
-                    break;
-                case -1:
-                    SFDebug::SF_print(std::string("SFThread error, Reason: ") + strerror(errno));
-                    break;
-                default:
-                    // Check whether any sock has data and call the process fn accordingly
-                    process_fns();
-                    break;
-                }
-                if (stopThread) break;
-                sfMutex.end_process();
+            case 0:
+                break;
+            case -1:
+                SFDebug::SF_print(std::string("SFThread error, Reason: ") + strerror(errno));
+                break;
+            default:
+                // Check whether any sock has data and call the process fn accordingly
+                process_fns();
+                break;
             }
+            if (stopThread) break;
+            sfMutex.end_process();
         }
 
-        //SFDebug::SF_print(std::string("Thread stopped: ") + pthread_self());
         stopped = true;
         return NULL;
     }
