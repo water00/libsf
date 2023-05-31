@@ -46,7 +46,7 @@ struct TimerInfo
     uint64_t ms_left()
     {
         int64_t r = expiryMs - get_now();
-        if (r <= 0)
+        if (r <= 0 || r > static_cast<int64_t>(milliSec))
         {
             // Return 1 to process immediately
             // Returning 0 will wait indefinitely
