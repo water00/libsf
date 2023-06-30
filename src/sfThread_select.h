@@ -61,7 +61,7 @@ public:
             if (s > 0)
             {
                 nfds = std::max<sock_size>(nfds, s);
-                FD_SET(s, &readfds);
+                FD_SET(static_cast<uint64_t>(s), &readfds);
             }
         }
         if (nfds > 0)

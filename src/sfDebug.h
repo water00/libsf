@@ -40,7 +40,7 @@ enum class SFColors
 };
 
 #define DBG_PRINT { if (dbgLevel <= maxDbg && *ofs) { *ofs << fgColor << n; } return *this; }
-#define DBG_PRINT_FLUSH { if (dbgLevel <= maxDbg && *ofs) { *ofs << fgColor << n; } if (n == "\n") (*ofs).flush(); return *this; }
+#define DBG_PRINT_FLUSH { if (dbgLevel <= maxDbg && *ofs) { *ofs << fgColor << n; } if (*n == '\n') (*ofs).flush(); return *this; }
 
 class SFDebug
 {
@@ -54,6 +54,7 @@ private:
 public:
     SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), SFColors clr = SFColors::Color_Default, std::string fName = "stdout")
     {
+        (void) clr;     // Not used
         dbgLevel = dbgLvl;
         maxDbg = max_dbg();
         fileOut = false;

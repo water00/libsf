@@ -199,7 +199,7 @@ public:
         return ret;
     }
 
-    bool disable(int32_t tID)
+    bool disable(uint32_t tID)
     {
         bool ret = false;
         tMutex.lock();
