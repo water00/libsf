@@ -120,7 +120,7 @@ public:
         std::future<int64_t> cliFut = std::async(&WinSockPair::get_clientSock);
 
         // Casting 64 bit to 32 bit; Normally shouldn't be a problem
-        // Caution warrented.
+        // Caution warranted.
         if ((socks[0] = (sock_size)srvFut.get()) == INVALID_SOCKET)
         {
             ret = false;

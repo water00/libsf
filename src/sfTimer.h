@@ -19,7 +19,10 @@
 #include "sfTask.h"
 #include "sfMessages.h"
 
-#define TIMER_DEBUG 0
+#define SFTIMER_DEBUG 0
+// Max timeout to wake up and check.
+// Adjustment to this value may be necessary when timer values are small
+#define SFMAX_TIMEOUT 5000
 
 struct TimerInfo
 {
@@ -51,6 +54,11 @@ struct TimerInfo
             // Return 1 to process immediately
             // Returning 0 will wait indefinitely
             return 1;
+        }
+        // Make sure 'r' is not too large.
+        if (r > SFMAX_TIMEOUT)
+        {
+            r = 10000;
         }
         return r;
     }
@@ -240,7 +248,7 @@ public:
             // If continuous is set, reset expiry; else disable
             if (vItr->continuous)
             {
-                #if (TIMER_DEBUG > 0)
+                #if (SFTIMER_DEBUG > 0)
                 std::stringstream ss;
                 ss << "TimerID: " << vItr->timerID << " is Continuous. Resetting";
                 SFDebug::SF_print(ss.str());
@@ -250,7 +258,7 @@ public:
             }
             else
             {
-                #if (TIMER_DEBUG > 0)
+                #if (SFTIMER_DEBUG > 0)
                 std::stringstream ss;
                 ss << "TimerID: " << vItr->timerID << " is Not Continuous. Disabling";
                 SFDebug::SF_print(ss.str());
