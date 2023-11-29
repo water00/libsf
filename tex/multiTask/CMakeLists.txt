@@ -28,7 +28,7 @@ else()
     target_link_libraries(${TARGET_NAME} lpthread)
 endif()
 
-target_link_libraries(${TARGET_NAME} libsf)
+#target_link_libraries(${TARGET_NAME} libsf)
 
 #target_include_directories(${TARGET_NAME} 
 #    PUBLIC ${LIBSF_DIR}/include/

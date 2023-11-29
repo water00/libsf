@@ -134,13 +134,30 @@ public:
     bool addMessage(const T& msg)
     {
         bool ret = false;
-        sfMutex.lock();
-        if (socks[0] > 0 && socks[1] > 0)
+        try
         {
-            messages.push_back(std::make_shared<T>(msg));
-            // Indicate(send) that message is ready
-            ret = send_msg(socks[1]) > 0 ? true : false;
+            sfMutex.lock();
+            if (socks[0] > 0 && socks[1] > 0)
+            {
+                std::shared_ptr<T> sMsg = std::make_shared<T>(msg);
+                if (sMsg == nullptr)
+                {
+                    return false;
+                }
+                messages.push_back(sMsg);
+                // Indicate(send) that message is ready
+                ret = send_msg(socks[1]) > 0 ? true : false;
+            }
         }
+        catch(const std::exception& e)
+        {
+            std::cerr << __FUNCTION__ << ": Error: " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << __FUNCTION__ << ": Error Occurred " << std::endl;
+        }
+        
         return ret;
     } 
 
@@ -148,19 +165,30 @@ public:
     bool getMessage(T& msg)
     {
         bool ret = false;
-        sfMutex.lock();
-        if (!messages.empty())
+        try
         {
-            if (messages.front() == nullptr)
+            sfMutex.lock();
+            if (!messages.empty())
             {
-                messages.pop_front();
+                if (messages.front() == nullptr)
+                {
+                    messages.pop_front();
+                }
+                else
+                {
+                    msg = *(dynamic_cast<T*>(messages.front().get()));
+                    messages.pop_front();
+                    ret = true;
+                }
             }
-            else
-            {
-                msg = *(dynamic_cast<T*>(messages.front().get()));
-                messages.pop_front();
-                ret = true;
-            }
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << __FUNCTION__ << ": Error: " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << __FUNCTION__ << ": Error Occurred " << std::endl;
         }
 
         return ret;
@@ -179,18 +207,29 @@ public:
     bool peekMessage(T& msg)
     {
         bool ret = false;
-        sfMutex.lock();
-        if (!messages.empty())
+        try
         {
-            if (messages.front() == nullptr)
+            sfMutex.lock();
+            if (!messages.empty())
             {
-                messages.pop_front();
+                if (messages.front() == nullptr)
+                {
+                    messages.pop_front();
+                }
+                else
+                {
+                    msg = *(dynamic_cast<T*>(messages.front().get()));
+                    ret = true;
+                }
             }
-            else
-            {
-                msg = *(dynamic_cast<T*>(messages.front().get()));
-                ret = true;
-            }
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << __FUNCTION__ << ": Error: " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << __FUNCTION__ << ": Error Occurred " << std::endl;
         }
         return ret;
     }
@@ -198,18 +237,29 @@ public:
     bool getMessageType(SFType& type)
     {
         bool ret = false;
-        sfMutex.lock();
-        if (!messages.empty())
+        try
         {
-            if (messages.front() == nullptr)
+            sfMutex.lock();
+            if (!messages.empty())
             {
-                messages.pop_front();
+                if (messages.front() == nullptr)
+                {
+                    messages.pop_front();
+                }
+                else
+                {
+                    type = messages.front()->getType();
+                    ret = true;
+                }
             }
-            else
-            {
-                type = messages.front()->getType();
-                ret = true;
-            }
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << __FUNCTION__ << ": Error: " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << __FUNCTION__ << ": Error Occurred " << std::endl;
         }
         return ret;
     }
