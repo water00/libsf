@@ -30,6 +30,6 @@ endif()
 
 #target_link_libraries(${TARGET_NAME} libsf)
 
-#target_include_directories(${TARGET_NAME} 
-#    PUBLIC ${LIBSF_DIR}/include/
-#)
+target_include_directories(${TARGET_NAME}
+    PUBLIC ${LIBSF_DIR}
+)

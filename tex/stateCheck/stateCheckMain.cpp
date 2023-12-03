@@ -3,6 +3,8 @@
 #include "../src/sfTimer.h"
 #include "stateTask.h"
 
+std::mutex SFMutex::mutex;
+
 bool stopTasks = false;
 
 DebugLevel max_debug() { return DebugLevel::DBG_Info; }

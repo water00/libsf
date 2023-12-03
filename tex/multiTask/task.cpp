@@ -13,6 +13,9 @@ extern SFDebug wngdbg;
 extern SFDebug ifodbg;
 extern SFDebug vbsdbg;
 
+std::mutex SFMutex::mutex;
+
+
 Task::Task(int32_t pNo, int32_t numMsg)
 {
 	cnt = 0;

@@ -37,3 +37,6 @@
 # vscode directory
 **/.vscode
 
+# extraneous files
+**/*.zip
+**/libsf*.*

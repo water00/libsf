@@ -11,7 +11,7 @@
 class SFMutex
 {
 protected:
-    std::mutex mutex;
+    static std::mutex mutex;
     std::mutex condMutex;
     std::condition_variable startCondVar;
     std::condition_variable endCondVar;

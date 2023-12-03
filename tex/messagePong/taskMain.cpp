@@ -4,6 +4,7 @@
 #include "task2.h"
 
 using namespace std;
+std::mutex SFMutex::mutex;
 
 Task1 th1;
 Task2 th2;
