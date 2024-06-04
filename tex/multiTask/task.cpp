@@ -2,8 +2,8 @@
 #include <string>
 #include <sstream>
 #include "task.h"
-#include "../../src/sfDebug.h"
-#include "../../src/sfTask.h"
+#include "sfDebug.h"
+#include "sfTask.h"
 
 extern Task* rand_process();
 extern bool stopTasks;

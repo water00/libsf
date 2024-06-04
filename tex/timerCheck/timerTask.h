@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <string>
 #include <list>
-#include "../../src/sfTask.h"
-#include "../../src/sfTimer.h"
+#include "sfTask.h"
+#include "sfTimer.h"
 
 
 class TimerTask : public SFTask

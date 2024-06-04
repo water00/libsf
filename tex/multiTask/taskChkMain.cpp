@@ -3,9 +3,9 @@
 #include <cstdlib>
 #include <vector>
 #include "task.h"
-#include "../../src/sfDebug.h"
-#include "../../src/sfMessages.h"
-#include "../../src/sfTask.h"
+#include "sfDebug.h"
+#include "sfMessages.h"
+#include "sfTask.h"
 
 using namespace std;
 

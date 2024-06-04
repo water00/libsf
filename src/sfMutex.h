@@ -11,17 +11,20 @@
 class SFMutex
 {
 protected:
-    std::mutex mutex;
     std::mutex condMutex;
     std::condition_variable startCondVar;
     std::condition_variable endCondVar;
-    std::atomic_bool inProcess = false;
-    std::atomic_bool startProcess = true;
-    std::atomic_bool stopped = false;
+    std::atomic_bool inProcess;
+    std::atomic_bool startProcess;
+    std::atomic_bool stopped;
 
 public:
+    std::mutex mutex;
     SFMutex() 
     {
+        inProcess = false;
+        startProcess = true;
+        stopped = false;
     }
 
     virtual ~SFMutex()

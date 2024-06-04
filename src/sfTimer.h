@@ -56,11 +56,7 @@ struct TimerInfo
             return 1;
         }
         // Make sure 'r' is not too large.
-        if (r > SFMAX_TIMEOUT)
-        {
-            r = 10000;
-        }
-        return r;
+        return ((r < SFMAX_TIMEOUT) ? r : SFMAX_TIMEOUT);
     }
 
     void reset_expiry()
@@ -302,6 +298,9 @@ public:
             // one fd to be set.
             #if defined(_WIN32)
                 Sleep((int32_t)msLeft);
+                process_timers();
+            #elif __APPLE__
+                sleep((int32_t)(msLeft/1000));
                 process_timers();
             #else
                 switch(select(0, NULL, NULL, NULL, &tv))

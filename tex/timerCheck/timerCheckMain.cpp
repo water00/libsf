@@ -1,8 +1,8 @@
 #include <iostream>
 #include <string>
-#include "../../src/sfTimer.h"
+#include "sfTimer.h"
 #include "timerTask.h"
-#include "../../src/sfTask.h"
+#include "sfTask.h"
 
 bool stopTasks = false;
 

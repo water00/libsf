@@ -23,6 +23,8 @@ struct ProcessStruct
     PROCESSFN processFn;
 };
 
+template <typename PROCESSFN>
+class SFThread;
 
 
 template <typename PROCESSFN>
@@ -33,12 +35,14 @@ protected:
     std::map<sock_size, PSTRUCT > processFnMap;
     std::thread* iThread;
     SFMutex sfMutex;
-    std::atomic_bool stopThread = false;
-    std::atomic_bool stopped = false;
+    std::atomic_bool stopThread;
+    std::atomic_bool stopped;
 
 public:
     SFThreadBase() 
     {
+        stopThread = false;
+        stopped = false;
         iThread = new std::thread(&SFThreadBase::start_thread, this);
     }
 
@@ -64,7 +68,7 @@ public:
 
     int64_t get_processCount()
     {
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         return processFnMap.size();
     }
     virtual void wait_forProcessEnd() 
@@ -87,7 +91,7 @@ public:
     
     static void* start_thread(void* data)
     {
-        return static_cast<SFThread<PROCESSFN> *>(data)->thread_run();
+        return (static_cast<SFThread<PROCESSFN> *>(data))->thread_run();
     }
 
     void* thread_run()

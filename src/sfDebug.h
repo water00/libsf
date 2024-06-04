@@ -52,9 +52,8 @@ private:
     bool fileOut;
 	
 public:
-    SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), SFColors clr = SFColors::Color_Default, std::string fName = "stdout")
+    SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), [[maybe_unused]]SFColors clr = SFColors::Color_Default, std::string fName = "stdout")
     {
-        (void) clr;     // Not used
         dbgLevel = dbgLvl;
         maxDbg = max_dbg();
         fileOut = false;
@@ -79,7 +78,7 @@ public:
         {
             #ifndef _WIN32
                 std::stringstream ss;
-                ss << "\033[" << clr << "m"; 
+                ss << "\033[" << static_cast<int32_t>(clr) << "m"; 
                 fgColor = ss.str();
             #endif
         }

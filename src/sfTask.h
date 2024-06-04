@@ -37,9 +37,14 @@ public:
         SFDebug::SF_print(__FUNCTION__);
         // If task processing is going on, wait
         sfMutex.wait_forProcessEnd();
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         stopTask = true;
-        del_msgs();
+        //del_msgs();
+        for (auto lItr = messages.begin(); lItr != messages.end(); ++lItr)
+        {
+            lItr->reset();
+        }
+        messages.clear();
         if (sfThread)
         {
             sfThread->stop_process();
@@ -79,7 +84,7 @@ public:
     }
     void del_msgs()
     {
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         for (auto lItr = messages.begin(); lItr != messages.end(); ++lItr)
         {
             lItr->reset();
@@ -89,7 +94,7 @@ public:
     }
     void stop_task()
     {
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         stopTask = true;
     }
     bool task_stopped()
@@ -117,7 +122,7 @@ public:
 
     virtual void shut_down()
     {
-        sfMutex.lock();
+        //std::lock_guard<std::mutex> lock(sfMutex.mutex);
         if (socks[0] > 0 && socks[1] > 0)
         {
             #ifdef _WIN32
@@ -134,7 +139,7 @@ public:
     bool addMessage(const T& msg)
     {
         bool ret = false;
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         if (socks[0] > 0 && socks[1] > 0)
         {
             messages.push_back(std::make_shared<T>(msg));
@@ -148,7 +153,7 @@ public:
     bool getMessage(T& msg)
     {
         bool ret = false;
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         if (!messages.empty())
         {
             if (messages.front() == nullptr)
@@ -169,7 +174,7 @@ public:
     int32_t getNumMessages()
     {
         int32_t ret = 0;
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         ret = (int32_t)messages.size();
 
         return ret;
@@ -179,7 +184,7 @@ public:
     bool peekMessage(T& msg)
     {
         bool ret = false;
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         if (!messages.empty())
         {
             if (messages.front() == nullptr)
@@ -198,7 +203,7 @@ public:
     bool getMessageType(SFType& type)
     {
         bool ret = false;
-        sfMutex.lock();
+        std::lock_guard<std::mutex> lock(sfMutex.mutex);
         if (!messages.empty())
         {
             if (messages.front() == nullptr)

@@ -38,6 +38,7 @@
     #else
     #   error "Unknown Apple platform"
     #endif
+    #define USE_SELECT
     #define sock_size int32_t
 #elif __linux__
     // linux
