@@ -37,3 +37,6 @@
 # vscode directory
 **/.vscode
 
+# idx directory
+**/.idx
+
