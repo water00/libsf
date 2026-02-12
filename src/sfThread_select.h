@@ -25,7 +25,7 @@ public:
 
     virtual bool add_process(const typename SFThreadBase<PROCESSFN>::PSTRUCT& p)
     {
-        if (p.sock < 0 || p.processObj == NULL)
+        if (p.sock < 0 || p.processObj == nullptr)
         {
             return false;
         }
@@ -53,7 +53,7 @@ public:
     {
         nfds = 0;
         FD_ZERO(&readfds);
-        tv.tv_sec = 0;
+        tv.tv_sec = 5;
         tv.tv_usec = 0;
 
         typename std::map<sock_size, typename SFThreadBase<PROCESSFN>::PSTRUCT>::iterator mItr;

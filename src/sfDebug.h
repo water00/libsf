@@ -7,6 +7,7 @@
 #include <cstring>
 #include <sstream>
 #include <cerrno>
+#include <memory>
 
 enum class DebugLevel
 {
@@ -47,16 +48,15 @@ class SFDebug
 private:
     DebugLevel dbgLevel;
     std::ostream* ofs;
+    std::unique_ptr<std::ofstream> ownedOfs;
     std::string fgColor;
     DebugLevel maxDbg;
-    bool fileOut;
-	
+
 public:
     SFDebug(DebugLevel dbgLvl, DebugLevel (max_dbg)(), [[maybe_unused]]SFColors clr = SFColors::Color_Default, std::string fName = "stdout")
     {
         dbgLevel = dbgLvl;
         maxDbg = max_dbg();
-        fileOut = false;
         if (fName == "stdout")
         {
             ofs = &std::cout;
@@ -67,30 +67,26 @@ public:
         }
         else
         {
-            ofs = new std::ofstream(fName);
-            fileOut = true;
+            ownedOfs = std::make_unique<std::ofstream>(fName);
+            if (!ownedOfs->is_open())
+            {
+                std::cout << "Opening of Debug File failed" << std::endl;
+                ofs = &std::cout;
+                ownedOfs.reset();
+            }
+            else
+            {
+                ofs = ownedOfs.get();
+            }
         }
-        if (!ofs)
-        {
-            std::cout << "Opening of Debug File failed" << std::endl;
-        }
-        else
-        {
-            #ifndef _WIN32
-                std::stringstream ss;
-                ss << "\033[" << static_cast<int32_t>(clr) << "m"; 
-                fgColor = ss.str();
-            #endif
-        }
+        #ifndef _WIN32
+            std::stringstream ss;
+            ss << "\033[" << static_cast<int32_t>(clr) << "m";
+            fgColor = ss.str();
+        #endif
     }
 
-    ~SFDebug()
-    {
-        if (fileOut && ofs)
-        {
-            delete ofs;
-        }
-    }
+    ~SFDebug() = default;
 
     // For internal debug printing
     static void SF_print(const std::string& str)
