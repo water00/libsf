@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfThreadBase.h"
+#include <vector>
 
 template <typename PROCESSFN>
 class SFThread : public SFThreadBase <PROCESSFN>
@@ -9,10 +10,10 @@ private:
     int32_t maxEpollEvents;
     int32_t epollFd;
     int32_t fdCount;
-    struct epoll_event* events;
-    
+    std::vector<epoll_event> events;
+
 public:
-    SFThread() 
+    SFThread()
     {
         maxEpollEvents = 0;
         fdCount = 0;
@@ -24,15 +25,11 @@ public:
     virtual ~SFThread()
     {
         close(epollFd);
-        if (events)
-        {
-            delete [] events;
-        }
     }
 
     virtual bool add_process(const typename SFThreadBase<PROCESSFN>::PSTRUCT& p)
     {
-        if (p.sock < 0 || p.processObj == NULL)
+        if (p.sock < 0 || p.processObj == nullptr)
         {
             return false;
         }
@@ -44,7 +41,7 @@ public:
         event.events = EPOLLIN;
         event.data.ptr = nullptr;
         event.data.fd = p.sock;
-        
+
         if(epoll_ctl(epollFd, EPOLL_CTL_ADD, p.sock, &event) < 0)
         {
             SFDebug::SF_print(std::string("Add Sock failed: ") + strerror(errno));
@@ -52,42 +49,39 @@ public:
         else
         {
             maxEpollEvents++;
-            // Delete previous events and create new
-            if (events)
-            {
-                delete [] events;
-            }
-            events = new epoll_event[maxEpollEvents];
+            events.resize(maxEpollEvents);
         }
 
         return true;
     }
 
     virtual bool rm_process(sock_size pID)
-    { 
+    {
         bool ret = true;
         std::lock_guard<std::mutex> lock(SFThreadBase<PROCESSFN>::sfMutex.mutex);
         typename std::map<int32_t, typename SFThreadBase<PROCESSFN>::PSTRUCT>::iterator mItr = SFThreadBase<PROCESSFN>::processFnMap.find(pID);
- 
+
         if (mItr == SFThreadBase<PROCESSFN>::processFnMap.end())
         {
             ret = false;
         }
         else
         {
-            if(epoll_ctl(epollFd, EPOLL_CTL_DEL, mItr->second.sock, NULL))
+            if(epoll_ctl(epollFd, EPOLL_CTL_DEL, mItr->second.sock, nullptr))
             {
                 SFDebug::SF_print(std::string("Remove Sock failed: ") + strerror(errno));
             }
             else
             {
                 maxEpollEvents--;
-                // Delete previous events and create new
-                if (events)
+                if (maxEpollEvents > 0)
                 {
-                    delete [] events;
+                    events.resize(maxEpollEvents);
                 }
-                events = new epoll_event[maxEpollEvents];
+                else
+                {
+                    events.clear();
+                }
             }
             SFThreadBase<PROCESSFN>::processFnMap.erase(pID);
         }
@@ -98,12 +92,12 @@ public:
     {
         {
             std::lock_guard<std::mutex> lock(SFThreadBase<PROCESSFN>::sfMutex.mutex);
-            if (SFThreadBase<PROCESSFN>::is_stopped()) return 0;
+            if (SFThreadBase<PROCESSFN>::is_stopped() || maxEpollEvents <= 0) return 0;
         }
-        fdCount = epoll_wait(epollFd, events, maxEpollEvents, 5000);
+        fdCount = epoll_wait(epollFd, events.data(), maxEpollEvents, 5000);
         return fdCount;
     }
-    
+
     virtual void process_fns()
     {
         {
@@ -130,11 +124,11 @@ public:
                 }
             }
             if (
-                p.processObj && 
-                !p.processObj->task_stopped() && 
+                p.processObj &&
+                !p.processObj->task_stopped() &&
                 p.sock > 0 &&
-                (SFThreadBase<PROCESSFN>::read_msg(p.sock) > 0) && 
-                p.processObj->getNumMessages() > 0 
+                (SFThreadBase<PROCESSFN>::read_msg(p.sock) > 0) &&
+                p.processObj->getNumMessages() > 0
             )
             {
                 p.processObj->start_process();
@@ -144,5 +138,4 @@ public:
         }
     }
 };
-
 

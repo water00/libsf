@@ -6,6 +6,7 @@
 #include <cassert>
 #include <thread>
 #include <mutex>
+#include <memory>
 #include <condition_variable>
 #include <list>
 #include <map>
@@ -33,7 +34,7 @@ class SFThreadBase
 protected:
     typedef ProcessStruct<PROCESSFN> PSTRUCT;
     std::map<sock_size, PSTRUCT > processFnMap;
-    std::thread* iThread;
+    std::unique_ptr<std::thread> iThread;
     SFMutex sfMutex;
     std::atomic_bool stopThread;
     std::atomic_bool stopped;
@@ -43,7 +44,7 @@ public:
     {
         stopThread = false;
         stopped = false;
-        iThread = new std::thread(&SFThreadBase::start_thread, this);
+        iThread = std::make_unique<std::thread>(&SFThreadBase::start_thread, this);
     }
 
     virtual ~SFThreadBase()
@@ -54,7 +55,6 @@ public:
         sfMutex.notify();
         while (!stopped) sleep(1);
         iThread->join();
-        delete iThread;
     }
 
     virtual void stop_thread()

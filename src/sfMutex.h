@@ -31,7 +31,8 @@ public:
     {
     }
 
-    inline void lock() { std::lock_guard<std::mutex> lock(mutex); }
+    inline void lock() { mutex.lock(); }
+    inline void unlock() { mutex.unlock(); }
 
     inline void wait_forProcessEnd()
     {

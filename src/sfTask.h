@@ -5,6 +5,7 @@
 #include "sfMessages.h"
 #include "sfMutex.h"
 #include <memory>
+#include <mutex>
 
 typedef void(SFTask::*PROCFN)(void);
 
@@ -20,6 +21,7 @@ protected:
 
 public:
     inline static SFThread<PROCFN> *sfThread = nullptr;
+    inline static std::mutex sfThreadMutex;
 
     SFTask()
     {
@@ -27,9 +29,12 @@ public:
         socks[1] = -1;
         stopTask = false;
 
-        if (sfThread == nullptr)
         {
-            sfThread = new SFThread<PROCFN> ();
+            std::lock_guard<std::mutex> lock(sfThreadMutex);
+            if (sfThread == nullptr)
+            {
+                sfThread = new SFThread<PROCFN>();
+            }
         }
     }
     virtual ~SFTask()
@@ -122,15 +127,18 @@ public:
 
     virtual void shut_down()
     {
-        //std::lock_guard<std::mutex> lock(sfMutex.mutex);
         if (socks[0] > 0 && socks[1] > 0)
         {
             #ifdef _WIN32
                 shutdown(socks[0], SD_BOTH);
                 shutdown(socks[1], SD_BOTH);
+                closesocket(socks[0]);
+                closesocket(socks[1]);
             #else
                 shutdown(socks[0], SHUT_RDWR);
                 shutdown(socks[1], SHUT_RDWR);
+                close(socks[0]);
+                close(socks[1]);
             #endif
             socks[0] = socks[1] = -1;
         }
@@ -162,9 +170,18 @@ public:
             }
             else
             {
-                msg = *(dynamic_cast<T*>(messages.front().get()));
-                messages.pop_front();
-                ret = true;
+                T* casted = dynamic_cast<T*>(messages.front().get());
+                if (casted)
+                {
+                    msg = *casted;
+                    messages.pop_front();
+                    ret = true;
+                }
+                else
+                {
+                    // Type mismatch - remove the invalid message
+                    messages.pop_front();
+                }
             }
         }
 
@@ -193,8 +210,12 @@ public:
             }
             else
             {
-                msg = *(dynamic_cast<T*>(messages.front().get()));
-                ret = true;
+                T* casted = dynamic_cast<T*>(messages.front().get());
+                if (casted)
+                {
+                    msg = *casted;
+                    ret = true;
+                }
             }
         }
         return ret;
@@ -219,20 +240,22 @@ public:
         return ret;
     }
 
-    void create_sock()
+    bool create_sock()
     {
         #if defined(_WIN32)
             if (!WinSockPair::get_sockPair(socks))
             {
                 SFDebug::SF_print(std::string("SocketPair Creation failed"));
+                return false;
             }
         #else
             if ((socketpair(AF_UNIX, SOCK_STREAM, 0, socks)) < 0)
             {
                 SFDebug::SF_print(std::string("Socket Creation failed, Reason: ") + strerror(errno));
+                return false;
             }
-            // We can put socket options here, though at present we don't need any.
         #endif
+        return true;
     }
 
     int32_t send_msg(sock_size sock)

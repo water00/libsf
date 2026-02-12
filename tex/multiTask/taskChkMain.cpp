@@ -37,12 +37,14 @@ int main(int argc, char** argv)
 	// first argument for number of tasks
 	if (argc > 1)
 	{
-		numProcess = atoi(argv[1]);
+		try { numProcess = std::stoi(argv[1]); }
+		catch (const std::exception&) { std::cerr << "Invalid number of tasks" << std::endl; return 1; }
 	}
-	// second argument for number of messages to send before quitting	
+	// second argument for number of messages to send before quitting
 	if (argc > 2)
 	{
-		numMessages = atoi(argv[2]);
+		try { numMessages = std::stoi(argv[2]); }
+		catch (const std::exception&) { std::cerr << "Invalid number of messages" << std::endl; return 1; }
 	}
 
 

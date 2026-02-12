@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #if defined(_WIN32)
     //define something for Windows (32-bit and 64-bit, this part is common)
     // Windows restricts the size to 64. Increase it.
@@ -7,9 +9,11 @@
     #define FD_SETSIZE 8192
     #endif
     #define sleep(x) Sleep(x * 1000)
+    // Note: WSAGetLastError() returns the last Winsock error;
+    // the parameter is accepted but unused for API compatibility.
     #define strerror(x) std::to_string(WSAGetLastError())
     #define USE_SELECT
-    #define sock_size int64_t
+    using sock_size = int64_t;
     #include <WinSock2.h>
     #include <afunix.h>
     #include "winSockPair.h"
@@ -39,7 +43,7 @@
     #   error "Unknown Apple platform"
     #endif
     #define USE_SELECT
-    #define sock_size int32_t
+    using sock_size = int32_t;
 #elif __linux__
     // linux
     #include <errno.h>
@@ -49,8 +53,7 @@
     #include <sys/time.h>
     #include <unistd.h>
     #include <sys/epoll.h>
-    #include <unistd.h>
     #define USE_EPOLL
-    #define sock_size int32_t
+    using sock_size = int32_t;
 #endif
 

@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <thread>
 #include <mutex>
+#include <atomic>
+#include <memory>
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
@@ -39,14 +41,14 @@ struct TimerInfo
     {
         expiryMs = get_now() + milliSec;
     }
-    // Returns milliseconds from epoch in integral 
-    uint64_t get_now()
+    // Returns milliseconds from epoch in integral
+    uint64_t get_now() const
     {
         std::chrono::milliseconds now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch());
         return now.count();
     }
 
-    uint64_t ms_left()
+    uint64_t ms_left() const
     {
         int64_t r = expiryMs - get_now();
         if (r <= 0 || r > static_cast<int64_t>(milliSec))
@@ -64,7 +66,7 @@ struct TimerInfo
         expiryMs = get_now() + milliSec;
     }
 
-    bool is_expired()
+    bool is_expired() const
     {
         return get_now() >= expiryMs;
     }
@@ -72,7 +74,7 @@ struct TimerInfo
 
 struct Sorter
 {
-    bool operator() (TimerInfo a,TimerInfo b) 
+    bool operator() (const TimerInfo& a, const TimerInfo& b) const
     { 
         // Enabled ones come before disabled
         if (!a.enabled && b.enabled)
@@ -94,22 +96,21 @@ private:
     std::vector<TimerInfo> timerInfos;
     int32_t idCnt;
     std::mutex tMutex;
-    std::thread* tThread;
+    std::unique_ptr<std::thread> tThread;
     Sorter timerSorter;
-    bool stopThread;
+    std::atomic_bool stopThread;
 
 public:
     SFTimer()
     {
         idCnt = 0;
         stopThread = false;
-        tThread = new std::thread(&timer_thread, this);
+        tThread = std::make_unique<std::thread>(&timer_thread, this);
     }
     ~SFTimer()
     {
         stopThread = true;
         tThread->join();
-        delete tThread;
         timerInfos.clear();
     }
 
@@ -121,12 +122,12 @@ public:
         }
         TimerInfo t(ms, ++idCnt, task, true, continuous, uData);
 
-        tMutex.lock();
-        timerInfos.push_back(t);
-
-        // Sort based on expiry time
-        std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
-        tMutex.unlock();
+        {
+            std::lock_guard<std::mutex> lock(tMutex);
+            timerInfos.push_back(t);
+            // Sort based on expiry time
+            std::sort(timerInfos.begin(), timerInfos.end(), timerSorter);
+        }
 
         return idCnt;
     }
@@ -135,7 +136,7 @@ public:
     bool delete_timer(uint32_t tID)
     {
         bool ret = false;
-        tMutex.lock();
+        std::lock_guard<std::mutex> lock(tMutex);
         for (auto vItr = timerInfos.begin(); vItr != timerInfos.end(); ++vItr)
         {
             if (vItr->timerID == tID)
@@ -145,47 +146,37 @@ public:
                 break;
             }
         }
-        tMutex.unlock();
         return ret;
     }
 
     void delete_allTimer()
     {
-        tMutex.lock();
-        for (auto vItr = timerInfos.begin(); vItr != timerInfos.end(); ++vItr)
-        {
-            timerInfos.erase(vItr);
-        }
+        std::lock_guard<std::mutex> lock(tMutex);
         timerInfos.clear();
-        tMutex.unlock();
     }
     int32_t num_timers()
     {
-        int32_t ret = 0;
-        tMutex.lock();
-        ret = static_cast<int32_t>(timerInfos.size());
-        tMutex.unlock();
-        return ret;
+        std::lock_guard<std::mutex> lock(tMutex);
+        return static_cast<int32_t>(timerInfos.size());
     }
     void print_timers()
     {
-        tMutex.lock();
+        std::lock_guard<std::mutex> lock(tMutex);
         for (auto vItr = timerInfos.begin(); vItr != timerInfos.end(); ++vItr)
         {
             std::stringstream ss;
-            ss  << "ID: " << std::setw(4) << vItr->timerID 
-                << ", MS: " << std::setw(10) << vItr->expiryMs 
-                << ", Enabled: " << vItr->enabled 
-                << ", Continuous: " << vItr->continuous; 
+            ss  << "ID: " << std::setw(4) << vItr->timerID
+                << ", MS: " << std::setw(10) << vItr->expiryMs
+                << ", Enabled: " << vItr->enabled
+                << ", Continuous: " << vItr->continuous;
             SFDebug::SF_print(ss.str());
         }
-        tMutex.unlock();
     }
 
     bool enable(uint32_t tID)
     {
         bool ret = false;
-        tMutex.lock();
+        std::lock_guard<std::mutex> lock(tMutex);
         for (auto vItr = timerInfos.begin(); vItr != timerInfos.end(); ++vItr)
         {
             if (vItr->timerID == tID)
@@ -194,31 +185,29 @@ public:
                 vItr->reset_expiry();
                 vItr->enabled = true;
                 // Re-sort
-                std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
+                std::sort(timerInfos.begin(), timerInfos.end(), timerSorter);
                 ret = true;
                 break;
             }
         }
-        tMutex.unlock();
         return ret;
     }
 
     bool disable(uint32_t tID)
     {
         bool ret = false;
-        tMutex.lock();
+        std::lock_guard<std::mutex> lock(tMutex);
         for (auto vItr = timerInfos.begin(); vItr != timerInfos.end(); ++vItr)
         {
             if (vItr->timerID == tID)
             {
                 vItr->enabled = false;
                 // Re-sort
-                std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
+                std::sort(timerInfos.begin(), timerInfos.end(), timerSorter);
                 ret = true;
                 break;
             }
         }
-        tMutex.unlock();
         return ret;
     }
 
@@ -230,7 +219,7 @@ public:
 
     void process_timers()
     {
-        tMutex.lock();
+        std::lock_guard<std::mutex> lock(tMutex);
         auto vItr = timerInfos.begin();
 
         while (vItr != timerInfos.end() && vItr->enabled && vItr->is_expired())
@@ -263,46 +252,46 @@ public:
                 vItr->enabled = false;
             }
             // Re-sort
-            std::sort (timerInfos.begin(), timerInfos.end(), timerSorter);
-            // Restart check with the top 
+            std::sort(timerInfos.begin(), timerInfos.end(), timerSorter);
+            // Restart check with the top
             vItr = timerInfos.begin();
         }
-        tMutex.unlock();
     }
 
     void process()
     {
         while(!stopThread)
         {
-            struct timeval tv = {0, 0};
             uint64_t msLeft = 0;
 
-            tMutex.lock();
-            auto vItr = timerInfos.begin();
-            if (vItr != timerInfos.end())
             {
-                msLeft = vItr->ms_left();
-                tv.tv_sec = 0;
-                tv.tv_usec = (long)msLeft * 1000;
+                std::lock_guard<std::mutex> lock(tMutex);
+                auto vItr = timerInfos.begin();
+                if (vItr != timerInfos.end())
+                {
+                    msLeft = vItr->ms_left();
+                }
             }
-            tMutex.unlock();
 
             if (msLeft == 0)
             {
-                sleep(1);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
                 continue;
             }
 
             // For Windows simply sleep for the time & process
-            // Using select in Windows doesn't work as it requires atleast
+            // Using select in Windows doesn't work as it requires at least
             // one fd to be set.
             #if defined(_WIN32)
                 Sleep((int32_t)msLeft);
                 process_timers();
             #elif __APPLE__
-                sleep((int32_t)(msLeft/1000));
+                std::this_thread::sleep_for(std::chrono::milliseconds(msLeft));
                 process_timers();
             #else
+                struct timeval tv = {0, 0};
+                tv.tv_sec = 0;
+                tv.tv_usec = (long)msLeft * 1000;
                 switch(select(0, NULL, NULL, NULL, &tv))
                 {
                 case 0:
